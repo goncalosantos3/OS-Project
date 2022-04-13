@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <string.h>
 
 /*
 *   O cliente serve tem como função implementar uma interface de comunicação
@@ -17,9 +18,11 @@
 */
 
 
+//Ainda falta a implementação do <priority> no comando inicial
+
 int main(int argc, char *argv[]){
-    int i=0,j=0;
-    char pedido[50]; char *transformacoes[20]; char *str1,*str2;
+    int nrargs=argc-2;
+    int tamanhos_args[nrargs];
 
     if(mkfifo("fifo",0777)==-1){//Cria o fifo
         if(errno != EEXIST){//Quando o erro não é o erro de o fifo já existir
@@ -27,18 +30,19 @@ int main(int argc, char *argv[]){
             return 1;
         }
     }
-    int f = open("fifo", O_WRONLY);//O cliente, por agora, apenas vai escrever no fifo 
-    read(0,pedido,sizeof(pedido));
-    str1=strdup(pedido);
-    while((str2=strsep(str1," "))!=NULL){
-        //As duas primeiras strings deste array são os ficheiros de input e output 
-        if(i>=3){
-            transformacoes[j++]=str2;
+    int f = open("fifo", O_WRONLY);//O cliente, por agora, apenas vai escrever no fifo
+    if(f==-1){
+        printf("%s\n", strerror(errno));
+        return 2;
+    }
+    printf("A escrever número de args\n");
+    write(f,&nrargs,sizeof(int));//Manda para o servidor o número de argumentos no comando input
+    for(int j=0;j<nrargs;j++){
+        printf("%s\n", argv[j+2]);
+        write(f,argv[j+2],sizeof(char) * strlen(argv[j+2]));
+        if(j!=nrargs-1){
+            write(f," ",sizeof(char));
         }
-        i++;
     }
-    write(f,&j,sizeof(int));//Manda para o servidor o número de argumentos no comando input
-    for(int j=0;j<i;j++){
-        write(f,transformacoes[j],sizeof(transformacoes[i]));
-    }
+   return 0;
 }
