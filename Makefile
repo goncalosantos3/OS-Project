@@ -1,18 +1,18 @@
-server: bin/sdstored
+server: sdstored
 
-client: bin/sdstore
+client: sdstore
 
-bin/sdstored: obj/sdstored.o
-	gcc -g obj/sdstored.o -o bin/sdstored
+sdstored: obj/sdstored.o
+	gcc -g obj/sdstored.o -o sdstored
 
 obj/sdstored.o: src/sdstored.c
 	gcc -g -o obj/sdstored.o src/sdstored.c -c -Wall
 
-bin/sdstore: obj/sdstore.o
-	gcc -g obj/sdstore.o -o bin/sdstore
+sdstore: obj/sdstore.o
+	gcc -g obj/sdstore.o -o sdstore
 
 obj/sdstore.o: src/sdstore.c
 	gcc -g -o obj/sdstore.o src/sdstore.c -c -Wall
 
 clean:
-	rm -f obj/* tmp/* bin/{sdstore,sdstored}
+	rm -f obj/* tmp/* sdstore sdstored
