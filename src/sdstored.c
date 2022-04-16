@@ -20,80 +20,111 @@
 */
 
 void executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
-    char *path; 
+    char *path; int pid;
     int nrpipes=nrargs-4;
 
     if(nrpipes>=1){//Só precisamos de pipes se houverem 2 ou mais transformações
+
         int pipes[nrpipes][2];
         for(int i=0;i<nrpipes;i++){
-            pipe(pipes[i]);
+            if(pipe(pipes[i])<0){
+                printf("%s\n", strerror(errno));
+            }
         }
+
         for(int i=0;i<=nrpipes;i++){
-            if(fork()==0 && i==0){//Primeiro comando
+
+            if(i==0 && fork()==0){//Primeiro comando
                 path = strcat(argv[2],"/");
                 path = strcat(path,transformacoes[i+3]);
-                printf("%s\n", path);
-                close(pipes[0][0]);
+                //printf("%s\n", path);
                 int f = open(transformacoes[1],O_RDONLY);
+                if(f==-1){
+                    printf("%s\n", strerror(errno));
+                }
                 dup2(f,0);
                 dup2(pipes[0][1],1);
                 close(f);
-                close(pipes[0][1]); 
+
+                for(int i=0;i<nrpipes;i++){//Fecha todos os pipes
+                    close(pipes[i][0]);
+                    close(pipes[i][1]);
+                }
+
                 if(execl(path,transformacoes[i+3],NULL)==-1){
                     printf("%s\n", strerror(errno));
                     exit(1);
                 }
-            }else if(fork()==0 && i>0 && i<nrpipes){//Comandos intermédios
+            }
+            if(i>0 && i<nrpipes && fork()==0){//Comandos intermédios
                 path = strcat(argv[2],"/");
                 path = strcat(path,transformacoes[i+3]);
-                printf("%s\n", path);
-                close(pipes[i-1][1]);
-                close(pipes[i][0]);
+                //printf("%s\n", path);
                 dup2(pipes[i-1][0],0);
                 dup2(pipes[i][1],1);
-                close(pipes[i-1][0]);
-                close(pipes[i][1]);
+
+                for(int i=0;i<nrpipes;i++){//Fecha todos os pipes
+                    close(pipes[i][0]);
+                    close(pipes[i][1]);
+                }
+
                 if(execl(path,transformacoes[i+3],NULL)==-1){
                     printf("%s\n", strerror(errno));
                     exit(1);
                 }
-            }else if(fork()==0 && i==nrpipes){//Último comando
+            }else if(i==nrpipes && ((pid=fork())==0)){//Último comando
                 path = strcat(argv[2],"/");
                 path = strcat(path,transformacoes[i+3]);
-                printf("%s\n", path);
+                //printf("%s\n", path);
                 int f = open(transformacoes[2],O_CREAT | O_WRONLY | O_TRUNC, 0660);
-                close(pipes[i-1][1]);
+                if(f==-1){
+                    printf("%s\n", strerror(errno));
+                }
                 dup2(pipes[i-1][0],0);
                 dup2(f,1);
                 close(f);
-                close(pipes[i-1][0]);
+
+                for(int i=0;i<nrpipes;i++){//Fecha todos os pipes
+                    close(pipes[i][0]);
+                    close(pipes[i][1]);
+                }
+                
                 if(execl(path,transformacoes[i+3],NULL)==-1){
                     printf("%s\n", strerror(errno));
                     exit(1);
                 }
             }
         }  
+
+        for(int i=0;i<nrpipes;i++){//Fecha todos os pipes
+            close(pipes[i][0]);
+            close(pipes[i][1]);
+        }
+
+        waitpid(pid,NULL,0);
     }else if(nrpipes==0){
         if(fork()==0){
             path = strcat(argv[2],"/");
             path = strcat(path,transformacoes[3]);
-            printf("%s\n", path);
-            int f1=open(transformacoes[1],O_RDONLY);
+            //printf("%s\n", path);
+            int f1 = open(transformacoes[1],O_RDONLY);
+            printf("%s\n", transformacoes[1]);
             if(f1==-1){
                 printf("%s\n", strerror(errno));
             }
-            int f2=open(transformacoes[2],O_CREAT | O_WRONLY | O_TRUNC, 0660);
+            int f2 = open(transformacoes[2],O_CREAT | O_WRONLY | O_TRUNC, 0660);
             if(f2==-1){
                 printf("%s\n", strerror(errno));
             }
             dup2(f1,0);
             dup2(f2,1);
-            close(f1);close(f2);
+            close(f1); close(f2);
             if(execl(path,transformacoes[3],NULL)==-1){
                 printf("%s\n", strerror(errno));
                 exit(1);
             }
         }
+        wait(NULL);
     }
 }
 
@@ -121,9 +152,11 @@ int main(int argc, char *argv[]){
     }
     */
     int nrargs=5;
-    char *transformacoes[5]={"proc-file","samples/ficheiro1","outputs/output1","bcompress","nop"};
+    char *transformacoes[5]={"proc-file","samples/sample1","outputs/output1","bcompress","nop"};
+    char *transformacoes2[5]={"proc-file","outputs/output1","outputs/output2","nop","bdecompress"};
     if(strcmp(transformacoes[0],"proc-file")==0){
         executeProcFileCommand(argv,transformacoes,nrargs);
+        executeProcFileCommand(argv,transformacoes2,nrargs);
     }else if(strcmp(transformacoes[0],"status")==0){
         
     }
