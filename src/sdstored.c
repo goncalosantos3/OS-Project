@@ -131,61 +131,34 @@ void executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
 int main(int argc, char *argv[]){
     /*
     int i=0;
-    int nrargs;
+    int nrargs,tam;
     int f = open("fifo", O_RDONLY);
 
     printf("A ler número de args\n");
     read(f,&nrargs,sizeof(int));
-
+    read(f,&tam,sizeof(int));
     char *transformacoes[nrargs];
     char *str1; char *str2;
-    char command[1024];
+    char command[tam+1];
 
-    int n = read(f,command,sizeof(command));
-    command[n]='\0';
+    int n=read(f,command,sizeof(command));
+    command[n]='\n';
     printf("%s\n", command);
 
     str1=strdup(command);
     while((str2=strsep(&str1," "))!=NULL){
-        transformacoes[i++]=str2;
-        printf("%s\n", transformacoes[i-1]);
+        transformacoes[i]=str2;
+        printf("%s\n", transformacoes[i]);
+        i++;
     }
+    transformacoes[i++]=str2;
     */
     int nrargs=5;
     char *transformacoes[5]={"proc-file","samples/sample1","outputs/output1","bcompress","nop"};
-    char *transformacoes2[5]={"proc-file","outputs/output1","outputs/output2","nop","bdecompress"};
-    if(strcmp(transformacoes[0],"proc-file")==0){
+    if(strcmp(transformacoes[0],"proc-file")==0){   
         executeProcFileCommand(argv,transformacoes,nrargs);
-        executeProcFileCommand(argv,transformacoes2,nrargs);
     }else if(strcmp(transformacoes[0],"status")==0){
         
     }
     return 0;
-}   
-/*
-int main(int argc, char *argv[]){
-    int i=0;
-    int nrargs;
-    int f = open("fifo", O_RDONLY);
-    if(f==-1){
-        printf("%s\n", strerror(errno));
-    }
-
-    printf("A ler número de args\n");
-    read(f,&nrargs,sizeof(int));
-    int tam[nrargs];
-    char *transformacoes[nrargs];
-    for(int j=0;j<nrargs;j++){
-        read(f,tam+j,sizeof(int));
-        printf("%d\n", tam[j]);
-    }
-    while(i<nrargs){
-        transformacoes[i] = malloc(sizeof(char)*tam[i]);
-        read(f,transformacoes[i],sizeof(transformacoes[i]));
-        printf("%s\n", transformacoes[i]);
-        i++;
-    }
-    close(f);
-    return 0;
-}  
-*/
+}
