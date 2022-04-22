@@ -36,7 +36,7 @@ int main(int argc, char *argv[]){
         return 2;
     }
 
-    if(argc>1 && strcmp(argv[1],"proc-file")==0){
+    if(argc>1){
         //Executa o primeiro pedido (recebido como argumento do programa)
         printf("A escrever número de args\n");
 
@@ -60,12 +60,12 @@ int main(int argc, char *argv[]){
         printf("%s\n", command);
         write(f,command,sizeof(command));
     }
-    /*
-    while((n = read(0,command,sizeof(command)))){ 
+    char pedido[1000];
+    while((n = read(0,pedido,sizeof(pedido)))){// n = número de bytes lidos pelo read
         //Lê e executa os próximos pedidos feitos pelo utilizador
-
+        printf("%s\n", pedido);
+        write(f,pedido,n * sizeof(char));
     }
-    */
    close(f);
    return 0;
 }
