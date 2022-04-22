@@ -169,10 +169,8 @@ void setTransConfig(char *configFile, int transConfig[]){
                 j=6;
             }
             i=0;
-            printf("%s ", line);
         }else if(c =='\n'){
             line[i++]='\0';
-            printf("%s\n", line);
             transConfig[j]=atoi(line);
             i=0;
         }else{
@@ -181,7 +179,6 @@ void setTransConfig(char *configFile, int transConfig[]){
     }
     //Como no fim do ficheiro não temos um \n presente então temos que repetir o código no final do ciclo
     line[i++]='\0';
-    printf("%s\n", line);
     transConfig[j]=atoi(line);
     i=0;
 }
