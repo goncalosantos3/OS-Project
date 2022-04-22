@@ -21,7 +21,7 @@
 //Ainda falta a implementação do <priority> no comando inicial
 
 int main(int argc, char *argv[]){
-    int nrargs=argc-1;int tam=0;
+    int nrargs=argc-1;int tam=0; int n;
     int p=mkfifo("fifo",0777);//Cria o fifo
     if(p==-1){
         if(errno != EEXIST){//Quando o erro não é o erro de o fifo já existir
@@ -43,22 +43,24 @@ int main(int argc, char *argv[]){
         write(f,&nrargs,sizeof(int));//Manda para o servidor o número de argumentos no comando input
         for(int j=0;j<nrargs;j++){
             tam+=strlen(argv[j+1]);
-            tam+=nrargs-1;
         }
+        tam+=nrargs-1;
+        char command[tam+1];
         write(f,&tam,sizeof(int));
         for(int j=0;j<nrargs;j++){
-            printf("%s\n", argv[j+1]);
-            write(f,argv[j+1],sizeof(char) * strlen(argv[j+1]));
+            if(j==0){
+                strcpy(command,argv[1]);
+            }else{
+                strcat(command,argv[j+1]);
+            }
             if(j!=nrargs-1){
-                write(f," ",sizeof(char));
+                strcat(command," ");
             }
         }
+        printf("%s\n", command);
+        write(f,command,sizeof(command));
     }
     /*
-    else if(argc>1 && strcmp(argv[1],"status")==0){
-        //Apresenta o status do servidor
-
-    }
     while((n = read(0,command,sizeof(command)))){ 
         //Lê e executa os próximos pedidos feitos pelo utilizador
 

@@ -129,7 +129,6 @@ void executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
 }
 
 int main(int argc, char *argv[]){
-    /*
     int i=0;
     int nrargs,tam;
     int f = open("fifo", O_RDONLY);
@@ -137,14 +136,16 @@ int main(int argc, char *argv[]){
     printf("A ler número de args\n");
     read(f,&nrargs,sizeof(int));
     read(f,&tam,sizeof(int));
+    printf("%d\n", nrargs);
+    printf("%d\n", tam);
     char *transformacoes[nrargs];
     char *str1; char *str2;
     char command[tam+1];
 
     int n=read(f,command,sizeof(command));
-    command[n]='\n';
+    printf("%d\n", n);
+    //command[n]='\n';
     printf("%s\n", command);
-
     str1=strdup(command);
     while((str2=strsep(&str1," "))!=NULL){
         transformacoes[i]=str2;
@@ -152,9 +153,7 @@ int main(int argc, char *argv[]){
         i++;
     }
     transformacoes[i++]=str2;
-    */
-    int nrargs=5;
-    char *transformacoes[5]={"proc-file","samples/sample1","outputs/output1","bcompress","nop"};
+    
     if(strcmp(transformacoes[0],"proc-file")==0){   
         executeProcFileCommand(argv,transformacoes,nrargs);
     }else if(strcmp(transformacoes[0],"status")==0){

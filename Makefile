@@ -15,4 +15,4 @@ obj/sdstore.o: src/sdstore.c
 	gcc -g -o obj/sdstore.o src/sdstore.c -c -Wall
 
 clean:
-	rm -f obj/* tmp/* sdstore sdstored outputs/*
+	rm -f obj/* tmp/* sdstore sdstored outputs/* fifo
