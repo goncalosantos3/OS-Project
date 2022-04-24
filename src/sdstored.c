@@ -258,7 +258,18 @@ int verificaPedido (int transConfig[], int transNecess[]){
 
 int main(int argc, char *argv[]){
     int nrargs,tam,n;
-    int f = open("fifo", O_RDONLY);
+
+    int f1 = open("client-server", O_RDONLY);
+    if(f1 == -1) {
+        printf("%s\n", strerror(errno));
+        return 1;
+    }
+
+    int f2 = open("server-client", O_WRONLY);
+    if(f2 == -1){ 
+        printf("%s\n", strerror(errno));
+        return 2;
+    }
 
     int transConfig[7];
     //Este array de inteiros vai conter o número máximo de cada transformação de acordo com o primeiro argumento do servidor
@@ -266,23 +277,23 @@ int main(int argc, char *argv[]){
     //Este array vai conter o número de instâncias necessárias de cada transformação necessárias para concluir o pedido
     setTransConfig(argv[1],transConfig);
 
-    read(f,&nrargs,sizeof(int));
-    read(f,&tam,sizeof(int));
+    read(f1,&nrargs,sizeof(int));
+    read(f1,&tam,sizeof(int));
     char *transformacoes[nrargs];
     char command[tam+1];
 
-    while((n=read(f,command,sizeof(command)))>0){
+    while((n=read(f1,command,sizeof(command)))>0){//Ciclo que executa os pedidos enviados pelo cliente
         printf("%s\n", command);   
         setTransformacoesArray(transformacoes,command,transNecess);
 
         if(verificaPedido(transConfig,transNecess)==0){//Pedido tem que ficar em espera
-            printf("Pedido em fila de espera\n");
+            write(f2,"Pedido em fila de espera", 25 * sizeof(char));
 
         }else if(strcmp(transformacoes[0],"proc-file")==0){  
-            printf("Pedido a ser processado\n"); 
+            write(f2,"Pedido a ser processado", 24 * sizeof(char));
             executeProcFileCommand(argv,transformacoes,nrargs);
+            
         }else if(strcmp(transformacoes[0],"status")==0){//Ainda por definir
-            printf("Pedido a ser processado\n"); 
 
         }
     }
