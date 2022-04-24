@@ -27,7 +27,7 @@
 *   - E finalmente todas as transformações a serem executadas para completar o pedido
 *   Recebe ainda o parametro nrargs que se trata do comprimento do array de strings transformacoes.
 */
-void executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
+int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
     char *path; int pid;
     int nrpipes=nrargs-4;
 
@@ -109,9 +109,8 @@ void executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
             close(pipes[i][1]);
         }
 
-        waitpid(pid,NULL,0);
     }else if(nrpipes==0){
-        if(fork()==0){
+        if((pid=fork())==0){
             path = strcat(argv[2],"/");
             path = strcat(path,transformacoes[3]);
             //printf("%s\n", path);
@@ -132,8 +131,8 @@ void executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
                 exit(1);
             }
         }
-        wait(NULL);
     }
+    return pid;
 }
 
 /*
@@ -257,7 +256,7 @@ int verificaPedido (int transConfig[], int transNecess[]){
 }
 
 int main(int argc, char *argv[]){
-    int nrargs,tam,n;
+    int nrargs,tam,n,pid;
 
     int f1 = open("client-server", O_RDONLY);
     if(f1 == -1) {
@@ -270,6 +269,11 @@ int main(int argc, char *argv[]){
         printf("%s\n", strerror(errno));
         return 2;
     }
+
+    //int pipefd[2];
+    //pipe(pipefd);
+    //dup2(pipefd[0],f1);//O pipe passa a ler do fifo
+    //close(pipefd[0]);
 
     int transConfig[7];
     //Este array de inteiros vai conter o número máximo de cada transformação de acordo com o primeiro argumento do servidor
@@ -287,12 +291,16 @@ int main(int argc, char *argv[]){
         setTransformacoesArray(transformacoes,command,transNecess);
 
         if(verificaPedido(transConfig,transNecess)==0){//Pedido tem que ficar em espera
-            write(f2,"Pedido em fila de espera", 25 * sizeof(char));
+            write(f2,"Pedido em fila de espera\n", 26 * sizeof(char));
 
         }else if(strcmp(transformacoes[0],"proc-file")==0){  
-            write(f2,"Pedido a ser processado", 24 * sizeof(char));
-            executeProcFileCommand(argv,transformacoes,nrargs);
-            
+            write(f2,"Pedido a ser processado\n", 25 * sizeof(char));
+            pid = executeProcFileCommand(argv,transformacoes,nrargs);
+
+            if(waitpid(pid,NULL,WNOHANG) !=0 ){
+                write(f2,"Pedido concluido\n", 17 * sizeof(char));
+            }
+
         }else if(strcmp(transformacoes[0],"status")==0){//Ainda por definir
 
         }

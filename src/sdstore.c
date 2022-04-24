@@ -58,7 +58,7 @@ int main(int argc, char *argv[]){
         return 4;
     }
 
-    if(strcmp(argv[1],"proc-file")==0){
+    if(strcmp(argv[1],"proc-file")==0){//./sdstore proc-file input_file output_file bcompress ...
         //Executa o primeiro pedido (recebido como argumento do programa)
         printf("A escrever número de args\n");
 
@@ -86,9 +86,9 @@ int main(int argc, char *argv[]){
         n = read(f2,info,sizeof(info));
         //Recebe a informação do servidor sobre o estado o pedido (Em espera ou a ser processado) 
         info[n]='\n';
-        printf("%s\n", info);
-    }else if(strcmp(argv[1],"status")==0){
-
+        write(1,info, n * sizeof(char));
+    }else if(strcmp(argv[1],"status")==0){//./sdstore status
+        write(f1,"status", 7 * sizeof(char));
     }
     close(f1);
     close(f2);
