@@ -19,6 +19,14 @@
 *   Nome do executável do servidor: sdstored
 */
 
+/*
+*   Função que executa um pedido de proc-file.
+*   Recebe os argumentos passados ao servidor, o array de strings com:
+*   - Primero o tipo de pedido que se trata, que neste caso é sempre proc-file
+*   - Os ficheiros input e output
+*   - E finalmente todas as transformações a serem executadas para completar o pedido
+*   Recebe ainda o parametro nrargs que se trata do comprimento do array de strings transformacoes.
+*/
 void executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
     char *path; int pid;
     int nrpipes=nrargs-4;
@@ -227,16 +235,25 @@ void setTransformacoesArray(char *transformacoes[], char *command, int transNece
 *   necessárias de cada transformação para a execução do pedido atual.
 *   Esta função tem como objetivo verificar se o pedido por ser executado de seguida ou se terá 
 *   de ficar em espera. 
+*   Para além disso se o pedido for possível executar de seguida esta função ainda diminui o 
+*   número de instâncias disponíveis para cada transformação no array transConfig
 *   Devolve 1 se o pedido pode ser executado no momento 0 caso contrário.
 */
 int verificaPedido (int transConfig[], int transNecess[]){ 
+    int r=1;
 
-    for(int i=0;i<7;i++){
+    for(int i=0;i<7 && r==1;i++){
         if(transNecess[i]>transConfig[i]){
-            return 0;
+            r=0;
         }
     }
-    return 1;
+
+    if(r==1){
+        for(int i=0;i<7;i++){
+            transConfig[i]-=transNecess[i];
+        }
+    }
+    return r;
 }
 
 int main(int argc, char *argv[]){
@@ -266,6 +283,7 @@ int main(int argc, char *argv[]){
             executeProcFileCommand(argv,transformacoes,nrargs);
         }else if(strcmp(transformacoes[0],"status")==0){//Ainda por definir
             printf("Pedido a ser processado\n"); 
+
         }
     }
     return 0;
