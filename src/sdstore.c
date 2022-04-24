@@ -21,7 +21,8 @@
 //Ainda falta a implementação do <priority> no comando inicial
 
 int main(int argc, char *argv[]){
-    int nrargs=argc-1;int tam=0; int n;
+    int nrargs=argc-1, tam=0, n;
+
     int p=mkfifo("fifo",0777);//Cria o fifo
     if(p==-1){
         if(errno != EEXIST){//Quando o erro não é o erro de o fifo já existir
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]){
         return 2;
     }
 
-    if(argc>1){
+    if(strcmp(argv[1],"proc-file")==0){
         //Executa o primeiro pedido (recebido como argumento do programa)
         printf("A escrever número de args\n");
 
@@ -59,13 +60,9 @@ int main(int argc, char *argv[]){
         }
         printf("%s\n", command);
         write(f,command,sizeof(command));
+    }else if(strcmp(argv[1],"status")==0){
+        
     }
-    char pedido[1000];
-    while((n = read(0,pedido,sizeof(pedido)))){// n = número de bytes lidos pelo read
-        //Lê e executa os próximos pedidos feitos pelo utilizador
-        printf("%s\n", pedido);
-        write(f,pedido,n * sizeof(char));
-    }
-   close(f);
-   return 0;
+    close(f);
+    return 0;
 }

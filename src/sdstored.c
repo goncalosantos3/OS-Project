@@ -183,14 +183,70 @@ void setTransConfig(char *configFile, int transConfig[]){
     i=0;
 }
 
+/*
+*   Função que vai construir o array de string transformacoes com toda a informação necessária
+*   para executar o pedido atual:
+*   - tipo de operação (proc-file ou status)
+*   - ficheiros input e output
+*   - e finalmente todas as transformações a executar 
+*/
+void setTransformacoesArray(char *transformacoes[], char *command, int transNecess[]){
+    char *str1, *str2;
+    int i=0;
+
+    for(int i=0;i<7;i++){//Inicializa o arrray das transformações necessárias
+        transNecess[i]=0;
+    }
+
+    str1=strdup(command);
+        while((str2=strsep(&str1," "))!=NULL){
+            if(strcmp(str2,"bcompress")==0){
+                transNecess[0]++;
+            }else if(strcmp(str2,"bdecompress")==0){
+                transNecess[1]++;
+            }else if(strcmp(str2,"decrypt")==0){
+                transNecess[2]++;
+            }else if(strcmp(str2,"encrypt")==0){
+                transNecess[3]++;
+            }else if(strcmp(str2,"gcompress")==0){
+                transNecess[4]++;
+            }else if(strcmp(str2,"gdecompress")==0){
+                transNecess[5]++;
+            }else if(strcmp(str2,"nop")==0){
+                transNecess[6]++;
+            }
+            transformacoes[i]=str2;
+            i++;
+    }
+    transformacoes[i++]=str2;
+}
+
+/*
+*   Função que recebe o array de inteiros com o número atual de instâncias que ainda são 
+*   possíveis de usar de cada transformação e o array de inteiros com o número de instâncias 
+*   necessárias de cada transformação para a execução do pedido atual.
+*   Esta função tem como objetivo verificar se o pedido por ser executado de seguida ou se terá 
+*   de ficar em espera. 
+*   Devolve 1 se o pedido pode ser executado no momento 0 caso contrário.
+*/
+int verificaPedido (int transConfig[], int transNecess[]){ 
+
+    for(int i=0;i<7;i++){
+        if(transNecess[i]>transConfig[i]){
+            return 0;
+        }
+    }
+    return 1;
+}
+
 int main(int argc, char *argv[]){
-    int i=0; int n;
-    int nrargs,tam;
-    char *str1; char *str2;
+    int nrargs,tam,n;
     int f = open("fifo", O_RDONLY);
 
     int transConfig[7];
-    //Este array de inteiros vai conter o número máximo de cada transformação de acordo com o segundo argumento do servidor
+    //Este array de inteiros vai conter o número máximo de cada transformação de acordo com o primeiro argumento do servidor
+    int transNecess[7];
+    //Este array vai conter o número de instâncias necessárias de cada transformação necessárias para concluir o pedido
     setTransConfig(argv[1],transConfig);
 
     read(f,&nrargs,sizeof(int));
@@ -199,20 +255,18 @@ int main(int argc, char *argv[]){
     char command[tam+1];
 
     while((n=read(f,command,sizeof(command)))>0){
-        printf("%s\n", command);
-        str1=strdup(command);
-        while((str2=strsep(&str1," "))!=NULL){
-            transformacoes[i]=str2;
-            i++;
-        }
-        transformacoes[i++]=str2;
-        /*
-        if(strcmp(transformacoes[0],"proc-file")==0){   
+        printf("%s\n", command);   
+        setTransformacoesArray(transformacoes,command,transNecess);
+
+        if(verificaPedido(transConfig,transNecess)==0){//Pedido tem que ficar em espera
+            printf("Pedido em fila de espera\n");
+
+        }else if(strcmp(transformacoes[0],"proc-file")==0){  
+            printf("Pedido a ser processado\n"); 
             executeProcFileCommand(argv,transformacoes,nrargs);
         }else if(strcmp(transformacoes[0],"status")==0){//Ainda por definir
-
+            printf("Pedido a ser processado\n"); 
         }
-        */
     }
     return 0;
 }
