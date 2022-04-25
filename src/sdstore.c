@@ -27,8 +27,57 @@
 *   f2 é o file descriptor do fifo que comunica entre o servidor e o cliente em que o cliente
 *   recebe informação enviada pelo servidor.
 */
+
+void enviaInfoServer(int tampedido, char *argv[], int f1, int transNecess[]){        
+    char command[300];
+
+    for(int j=0;j<7;j++){
+        transNecess[j]=0;
+    }
+
+    for(int j=0;j<tampedido;j++){
+
+        if(j==0){
+            strcpy(command,argv[1]);
+        }else{
+            strcat(command,argv[j+1]);
+        }
+        if(j!=tampedido-1){
+            strcat(command," ");
+        }
+    }
+    printf("%s\n", command);
+    write(f1,command,sizeof(command));
+
+    write(f1,&tampedido,sizeof(int));
+    //Manda para o servidor o número de argumentos no comando input
+}
+
+void recebeInfoServer(char info[], int f2){//Por desenvolver
+
+    int n = read(f2,info,100 * sizeof(char));
+    //Recebe a informação do servidor sobre o estado o pedido (Em espera ou a ser processado) 
+    info[n]='\n';
+    if(strcmp(info,"Pedido a ser processado\n")==0){
+        write(1,info, n * sizeof(char));//Escreve: "Pedido a ser processado"
+        n = read(f2,info,100 * sizeof(char));
+        info[n]='\n';
+        write(1,info,n*sizeof(char));//Escreve: "Pedido concluido"
+    }else if (strcmp(info,"Pedido em fila de espera\n")==0){
+        write(1,info, n * sizeof(char));//Escreve: "Pedido em fila de espera"
+        n = read(f2,info,100 * sizeof(char));
+        info[n]='\n';
+        write(1,info,n * sizeof(char));//Escreve: "Pedido a ser processado"
+        n = read(f2,info,100 * sizeof(char));
+        info[n]='\n';
+        write(1,info,n*sizeof(char));//Escreve: "Pedido concluido"
+    }
+
+}
+
 int main(int argc, char *argv[]){
-    int nrargs=argc-1, tam=0, n;
+    int tampedido=argc-1;
+    int transNecess[7];
 
     int p=mkfifo("client-server",0777);//Cria o fifo que comunica entre o cliente e o servidor
     if(p==-1){
@@ -60,35 +109,15 @@ int main(int argc, char *argv[]){
 
     if(strcmp(argv[1],"proc-file")==0){//./sdstore proc-file input_file output_file bcompress ...
         //Executa o primeiro pedido (recebido como argumento do programa)
-        printf("A escrever número de args\n");
+        enviaInfoServer(tampedido,argv,f1,transNecess);
 
-        write(f1,&nrargs,sizeof(int));//Manda para o servidor o número de argumentos no comando input
-        for(int j=0;j<nrargs;j++){
-            tam+=strlen(argv[j+1]);
-        }
-        tam+=nrargs-1;
-        char command[tam+1];
-        write(f1,&tam,sizeof(int));
-        for(int j=0;j<nrargs;j++){
-            if(j==0){
-                strcpy(command,argv[1]);
-            }else{
-                strcat(command,argv[j+1]);
-            }
-            if(j!=nrargs-1){
-                strcat(command," ");
-            }
-        }
-        printf("%s\n", command);
-        write(f1,command,sizeof(command));
+        //char info[100];
+        //recebeInfoServer(info,f2);
 
-        char info[100];
-        n = read(f2,info,sizeof(info));
-        //Recebe a informação do servidor sobre o estado o pedido (Em espera ou a ser processado) 
-        info[n]='\n';
-        write(1,info, n * sizeof(char));
     }else if(strcmp(argv[1],"status")==0){//./sdstore status
+        
         write(f1,"status", 7 * sizeof(char));
+        
     }
     close(f1);
     close(f2);

@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include "../libs/sdstored.h"
 
 /*
 *   O servidor tem como função receber as tarefas passadas pelo cliente e aplicar as 
@@ -197,35 +198,32 @@ void setTransConfig(char *configFile, int transConfig[]){
 *   - ficheiros input e output
 *   - e finalmente todas as transformações a executar 
 */
-void setTransformacoesArray(char *transformacoes[], char *command, int transNecess[]){
+void setPedidoStruct(char *command, Pedido pe, int f1, int tampedido){
     char *str1, *str2;
     int i=0;
 
-    for(int i=0;i<7;i++){//Inicializa o arrray das transformações necessárias
-        transNecess[i]=0;
+    str1=strdup(command);
+    while((str2=strsep(&str1," "))!=NULL){
+        pe->pedido[i]=str2;
+        if(strcmp(str2,"bcompress")==0){
+            pe->transNecess[0]++;
+        }else if(strcmp(str2,"bdecompress")==0){
+            pe->transNecess[1]++;
+        }else if(strcmp(str2,"decrypt")==0){
+            pe->transNecess[2]++;
+        }else if(strcmp(str2,"encrypt")==0){
+            pe->transNecess[3]++;
+        }else if(strcmp(str2,"gcompress")==0){
+            pe->transNecess[4]++;
+        }else if(strcmp(str2,"gdecompress")==0){
+            pe->transNecess[5]++;
+        }else if(strcmp(str2,"nop")==0){
+            pe->transNecess[6]++;
+        }
+        i++;
     }
 
-    str1=strdup(command);
-        while((str2=strsep(&str1," "))!=NULL){
-            if(strcmp(str2,"bcompress")==0){
-                transNecess[0]++;
-            }else if(strcmp(str2,"bdecompress")==0){
-                transNecess[1]++;
-            }else if(strcmp(str2,"decrypt")==0){
-                transNecess[2]++;
-            }else if(strcmp(str2,"encrypt")==0){
-                transNecess[3]++;
-            }else if(strcmp(str2,"gcompress")==0){
-                transNecess[4]++;
-            }else if(strcmp(str2,"gdecompress")==0){
-                transNecess[5]++;
-            }else if(strcmp(str2,"nop")==0){
-                transNecess[6]++;
-            }
-            transformacoes[i]=str2;
-            i++;
-    }
-    transformacoes[i++]=str2;
+    pe->tampedido=tampedido;
 }
 
 /*
@@ -252,11 +250,12 @@ int verificaPedido (int transConfig[], int transNecess[]){
             transConfig[i]-=transNecess[i];
         }
     }
+    printf("%d\n", r);
     return r;
 }
 
 int main(int argc, char *argv[]){
-    int nrargs,tam,n,pid;
+    int n,pid,tampedido;
 
     int f1 = open("client-server", O_RDONLY);
     if(f1 == -1) {
@@ -270,38 +269,33 @@ int main(int argc, char *argv[]){
         return 2;
     }
 
-    //int pipefd[2];
-    //pipe(pipefd);
-    //dup2(pipefd[0],f1);//O pipe passa a ler do fifo
-    //close(pipefd[0]);
-
     int transConfig[7];
     //Este array de inteiros vai conter o número máximo de cada transformação de acordo com o primeiro argumento do servidor
-    int transNecess[7];
-    //Este array vai conter o número de instâncias necessárias de cada transformação necessárias para concluir o pedido
     setTransConfig(argv[1],transConfig);
 
-    read(f1,&nrargs,sizeof(int));
-    read(f1,&tam,sizeof(int));
-    char *transformacoes[nrargs];
-    char command[tam+1];
+    char command[300];
 
     while((n=read(f1,command,sizeof(command)))>0){//Ciclo que executa os pedidos enviados pelo cliente
-        printf("%s\n", command);   
-        setTransformacoesArray(transformacoes,command,transNecess);
+        
+        printf("%s\n", command);
+        read(f1,&tampedido,sizeof(int));
 
-        if(verificaPedido(transConfig,transNecess)==0){//Pedido tem que ficar em espera
+        Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
+        setPedidoStruct(command,pe,f1,tampedido);
+        //Na struct pe vamos ter o tamanho do pedido, o pedido e o número de instâncias necessárias para cada transformação
+
+        if(verificaPedido(transConfig,pe->transNecess)==0){//Pedido tem que ficar em espera
             write(f2,"Pedido em fila de espera\n", 26 * sizeof(char));
-
-        }else if(strcmp(transformacoes[0],"proc-file")==0){  
-            write(f2,"Pedido a ser processado\n", 25 * sizeof(char));
-            pid = executeProcFileCommand(argv,transformacoes,nrargs);
-
-            if(waitpid(pid,NULL,WNOHANG) !=0 ){
-                write(f2,"Pedido concluido\n", 17 * sizeof(char));
+            
+        }else if(strcmp(pe->pedido[0],"proc-file")==0){  
+            //write(f2,"Pedido a ser processado\n", 25 * sizeof(char));
+            pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);
+            
+            if(waitpid(pid,NULL,WNOHANG)!=0){
+               //write(f2,"Pedido concluido\n", 17 * sizeof(char));
             }
 
-        }else if(strcmp(transformacoes[0],"status")==0){//Ainda por definir
+        }else if(strcmp(pe->pedido[0],"status")==0){//Ainda por definir
 
         }
     }
