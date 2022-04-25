@@ -237,21 +237,32 @@ void setPedidoStruct(char *command, Pedido pe, int f1, int tampedido){
 *   Devolve 1 se o pedido pode ser executado no momento 0 caso contrário.
 */
 int verificaPedido (int transConfig[], int transNecess[]){ 
-    int r=1;
-
+    int r=1;    
     for(int i=0;i<7 && r==1;i++){
         if(transNecess[i]>transConfig[i]){
             r=0;
         }
-    }
-
+    }   
     if(r==1){
         for(int i=0;i<7;i++){
             transConfig[i]-=transNecess[i];
         }
     }
-    printf("%d\n", r);
     return r;
+}
+
+void colocaFilaEspera(Pedido pe, FilaEspera fesp){
+    fesp->fila[fesp->nrPedidosFila++]=pe;
+}
+
+Pedido retiraFilaEspera(FilaEspera fesp){
+    Pedido proximo = fesp->fila[0];
+    
+    for(int i=0;i<fesp->nrPedidosFila-1;i++){
+        fesp->fila[i]=fesp->fila[i+1];
+    }
+    fesp->nrPedidosFila--;
+    return proximo;
 }
 
 int main(int argc, char *argv[]){
@@ -269,34 +280,48 @@ int main(int argc, char *argv[]){
         return 2;
     }
 
+    //int pipefd[2];
+    //pipe(pipefd);
+    //dup2(f1,pipefd[0]);
+    //close(f1);
+    //fcntl(pipefd[0], F_SETFL, O_NONBLOCK);//Faz com que o pipe que lê do fifo não bloqueie
+
     int transConfig[7];
     //Este array de inteiros vai conter o número máximo de cada transformação de acordo com o primeiro argumento do servidor
     setTransConfig(argv[1],transConfig);
 
+    FilaEspera fesp = malloc(sizeof(struct filaEspera) + 30 * sizeof(struct pedido));
+    fesp->nrPedidosFila=0;
+
     char command[300];
 
-    while((n=read(f1,command,sizeof(command)))>0){//Ciclo que executa os pedidos enviados pelo cliente
-        
-        printf("%s\n", command);
-        read(f1,&tampedido,sizeof(int));
+    while(1){//Ciclo que executa os pedidos enviados pelo cliente
+        n = read(f1,command,sizeof(command));
 
-        Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
-        setPedidoStruct(command,pe,f1,tampedido);
-        //Na struct pe vamos ter o tamanho do pedido, o pedido e o número de instâncias necessárias para cada transformação
+        if(n > 0){//Recebemos um novo pedido
+            printf("%s\n", command);
+            read(f1,&tampedido,sizeof(int));
 
-        if(verificaPedido(transConfig,pe->transNecess)==0){//Pedido tem que ficar em espera
-            write(f2,"Pedido em fila de espera\n", 26 * sizeof(char));
-            
-        }else if(strcmp(pe->pedido[0],"proc-file")==0){  
-            //write(f2,"Pedido a ser processado\n", 25 * sizeof(char));
-            pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);
-            
-            if(waitpid(pid,NULL,WNOHANG)!=0){
-               //write(f2,"Pedido concluido\n", 17 * sizeof(char));
+            Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
+            setPedidoStruct(command,pe,f1,tampedido);
+            //Na struct pe vamos ter o tamanho do pedido, o pedido e o número de instâncias necessárias para cada transformação
+
+            if(verificaPedido(transConfig,pe->transNecess)==0){//Pedido tem que ficar em espera
+                //write(f2,"Pedido em fila de espera\n", 26 * sizeof(char));
+                colocaFilaEspera(pe,fesp);
+            }else if(strcmp(pe->pedido[0],"proc-file")==0){  
+                //write(f2,"Pedido a ser processado\n", 25 * sizeof(char));
+                pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);
+
+                if(waitpid(pid,NULL,WNOHANG)!=0){
+                   //write(f2,"Pedido concluido\n", 17 * sizeof(char));
+                }
+
+            }else if(strcmp(pe->pedido[0],"status")==0){//Ainda por definir
+
             }
-
-        }else if(strcmp(pe->pedido[0],"status")==0){//Ainda por definir
-
+        }else if(n < 0){//O pipe está vazio (Não se recebeu nenhum comando)
+            
         }
     }
     return 0;

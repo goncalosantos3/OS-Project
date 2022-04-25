@@ -14,6 +14,11 @@ typedef struct pedido{
     char *pedido[];
 }*Pedido;
 
+typedef struct filaEspera{
+    int nrPedidosFila;
+    Pedido fila[30];   
+}*FilaEspera;
+
 int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs);
 void setTransConfig(char *configFile, int transConfig[]);
 void setTransformacoesArray(char *transformacoes[], char *command, int transNecess[]);
