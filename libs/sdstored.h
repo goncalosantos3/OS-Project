@@ -3,6 +3,7 @@
 
 typedef struct pedido{
     int tampedido;
+    int pid;
     int transNecess[7];
     char *pedido[];
 }*Pedido;

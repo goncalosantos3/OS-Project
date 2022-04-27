@@ -249,6 +249,7 @@ void buildPedido(char *command, Pedido pe, int tampedido){
         i++;
     }
     pe->tampedido=tampedido;
+    pe->pid=0;//Enquanto que o pedido não é executado o pid é 0
 }
 
 int main(int argc, char *argv[]){
@@ -290,22 +291,34 @@ int main(int argc, char *argv[]){
             buildPedido(command,pe,tampedido);
             //Na struct pe vamos ter o tamanho do pedido, o pedido e o número de instâncias necessárias para cada transformação
 
-            if(verificaPedido(transConfig,pe->transNecess)==0){//Pedido tem que ficar em espera
-                //write(f2,"Pedido em fila de espera\n", 26 * sizeof(char));
-                colocaFilaEspera(pe,fesp);
-            }else if(strcmp(pe->pedido[0],"proc-file")==0){  
-                //write(f2,"Pedido a ser processado\n", 25 * sizeof(char));
-                pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);
+            if(strcmp(pe->pedido[0],"proc-file")==0){//Proc-file command
 
-                if(waitpid(pid,NULL,WNOHANG)!=0){
-                   //write(f2,"Pedido concluido\n", 17 * sizeof(char));
+                if(verificaPedido(transConfig,pe->transNecess)==0){//Comando em fila de espera
+
+                    write(f2,"Pedido em fila de espera", 25 * sizeof(char));
+                    colocaFilaEspera(pe,fesp);
+
+                }else{//Comando vai ser executado
+
+                    write(f2,"Pedido vai ser executado", 25 * sizeof(char));
+                    pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);  
+                    //Depois de o pedido entrar em execução o pedido assume o pid o processo
+                    if(waitpid(pid,NULL,WNOHANG) == 0){//Ainda não acabou a execução
+                        //Inserir num array a ser definido
+
+                    }else if(waitpid(pid,NULL,WNOHANG) == pe->pid){
+                        write(f2,"Pedido concluido", 16*sizeof(char));
+                    }
+
                 }
-
-            }else if(strcmp(pe->pedido[0],"status")==0){//Ainda por definir
-
+            }else if(strcmp(pe->pedido[0],"status")==0){//Status command
+                //Por implementar
             }
+
         }else if(n < 0){//O pipe está vazio (Não se recebeu nenhum comando)
-            
+            //Se não recebermos num novo comando vamos verificar primeiro se algum pedido já acabou ou não
+            //Depois verificamos se podemos mandar executar pedido que estivessem na fila de espera
+
         }
     }
     return 0;
