@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <string.h>
 #include "../libs/sdstored.h"
+#include "../libs/filaEspera.h"
 
 /*
 *   O servidor tem como função receber as tarefas passadas pelo cliente e aplicar as 
@@ -192,41 +193,6 @@ void setTransConfig(char *configFile, int transConfig[]){
 }
 
 /*
-*   Função que vai construir o array de string transformacoes com toda a informação necessária
-*   para executar o pedido atual:
-*   - tipo de operação (proc-file ou status)
-*   - ficheiros input e output
-*   - e finalmente todas as transformações a executar 
-*/
-void setPedidoStruct(char *command, Pedido pe, int f1, int tampedido){
-    char *str1, *str2;
-    int i=0;
-
-    str1=strdup(command);
-    while((str2=strsep(&str1," "))!=NULL){
-        pe->pedido[i]=str2;
-        if(strcmp(str2,"bcompress")==0){
-            pe->transNecess[0]++;
-        }else if(strcmp(str2,"bdecompress")==0){
-            pe->transNecess[1]++;
-        }else if(strcmp(str2,"decrypt")==0){
-            pe->transNecess[2]++;
-        }else if(strcmp(str2,"encrypt")==0){
-            pe->transNecess[3]++;
-        }else if(strcmp(str2,"gcompress")==0){
-            pe->transNecess[4]++;
-        }else if(strcmp(str2,"gdecompress")==0){
-            pe->transNecess[5]++;
-        }else if(strcmp(str2,"nop")==0){
-            pe->transNecess[6]++;
-        }
-        i++;
-    }
-
-    pe->tampedido=tampedido;
-}
-
-/*
 *   Função que recebe o array de inteiros com o número atual de instâncias que ainda são 
 *   possíveis de usar de cada transformação e o array de inteiros com o número de instâncias 
 *   necessárias de cada transformação para a execução do pedido atual.
@@ -251,18 +217,38 @@ int verificaPedido (int transConfig[], int transNecess[]){
     return r;
 }
 
-void colocaFilaEspera(Pedido pe, FilaEspera fesp){
-    fesp->fila[fesp->nrPedidosFila++]=pe;
-}
+/*
+*   Função que vai construir o array de string transformacoes com toda a informação necessária
+*   para executar o pedido atual:
+*   - tipo de operação (proc-file ou status)
+*   - ficheiros input e output
+*   - e finalmente todas as transformações a executar 
+*/
+void buildPedido(char *command, Pedido pe, int tampedido){
+    char *str1, *str2;
+    int i=0;
 
-Pedido retiraFilaEspera(FilaEspera fesp){
-    Pedido proximo = fesp->fila[0];
-    
-    for(int i=0;i<fesp->nrPedidosFila-1;i++){
-        fesp->fila[i]=fesp->fila[i+1];
+    str1=strdup(command);
+    while((str2=strsep(&str1," "))!=NULL){
+        pe->pedido[i]=str2;
+        if(strcmp(str2,"bcompress")==0){
+            pe->transNecess[0]++;
+        }else if(strcmp(str2,"bdecompress")==0){
+            pe->transNecess[1]++;
+        }else if(strcmp(str2,"decrypt")==0){
+            pe->transNecess[2]++;
+        }else if(strcmp(str2,"encrypt")==0){
+            pe->transNecess[3]++;
+        }else if(strcmp(str2,"gcompress")==0){
+            pe->transNecess[4]++;
+        }else if(strcmp(str2,"gdecompress")==0){
+            pe->transNecess[5]++;
+        }else if(strcmp(str2,"nop")==0){
+            pe->transNecess[6]++;
+        }
+        i++;
     }
-    fesp->nrPedidosFila--;
-    return proximo;
+    pe->tampedido=tampedido;
 }
 
 int main(int argc, char *argv[]){
@@ -290,9 +276,7 @@ int main(int argc, char *argv[]){
     //Este array de inteiros vai conter o número máximo de cada transformação de acordo com o primeiro argumento do servidor
     setTransConfig(argv[1],transConfig);
 
-    FilaEspera fesp = malloc(sizeof(struct filaEspera) + 30 * sizeof(struct pedido));
-    fesp->nrPedidosFila=0;
-
+    FilaEspera fesp = initFilaEspera();
     char command[300];
 
     while(1){//Ciclo que executa os pedidos enviados pelo cliente
@@ -303,7 +287,7 @@ int main(int argc, char *argv[]){
             read(f1,&tampedido,sizeof(int));
 
             Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
-            setPedidoStruct(command,pe,f1,tampedido);
+            buildPedido(command,pe,tampedido);
             //Na struct pe vamos ter o tamanho do pedido, o pedido e o número de instâncias necessárias para cada transformação
 
             if(verificaPedido(transConfig,pe->transNecess)==0){//Pedido tem que ficar em espera
