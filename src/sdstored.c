@@ -29,7 +29,7 @@
 *   - E finalmente todas as transformações a serem executadas para completar o pedido
 *   Recebe ainda o parametro nrargs que se trata do comprimento do array de strings transformacoes.
 */
-int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
+int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int f){
     char *path; int pid;
     int nrpipes=nrargs-4;
 
@@ -83,9 +83,14 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
                     exit(1);
                 }
             }else if(i==nrpipes && ((pid=fork())==0)){//Último comando
+                if(fork()==0){//Filho que espera pelo final da execução do pedido
+                    waitpid(pid,NULL,0);
+                    write(f,"Pedido concluído\n", 18 * sizeof(char));
+                    close(0);
+                }
                 path = strcat(argv[2],"/");
                 path = strcat(path,transformacoes[i+3]);
-                //printf("%s\n", path);
+
                 int f = open(transformacoes[2],O_CREAT | O_WRONLY | O_TRUNC, 0660);
                 if(f==-1){
                     printf("%s\n", strerror(errno));
@@ -113,9 +118,14 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
 
     }else if(nrpipes==0){
         if((pid=fork())==0){
+            if(fork()==0){
+                waitpid(pid,NULL,0);
+                write(f,"Pedido concluído\n", 18 * sizeof(char));
+                close(0);
+            }
             path = strcat(argv[2],"/");
             path = strcat(path,transformacoes[3]);
-            //printf("%s\n", path);
+
             int f1 = open(transformacoes[1],O_RDONLY);
             printf("%s\n", transformacoes[1]);
             if(f1==-1){
@@ -224,7 +234,7 @@ int verificaPedido (int transConfig[], int transNecess[]){
 *   - ficheiros input e output
 *   - e finalmente todas as transformações a executar 
 */
-void buildPedido(char *command, Pedido pe, int tampedido){
+void buildPedido(char *command, Pedido pe, int tampedido, int f1, int f2){
     char *str1, *str2;
     int i=0;
 
@@ -248,30 +258,26 @@ void buildPedido(char *command, Pedido pe, int tampedido){
         }
         i++;
     }
+    pe->fifo_input=f1;
+    pe->fifo_ouput=f2;
     pe->tampedido=tampedido;
     pe->pid=0;//Enquanto que o pedido não é executado o pid é 0
 }
 
 int main(int argc, char *argv[]){
-    int n,pid,tampedido;
-
-    int f1 = open("client-server", O_RDONLY);
+    int n,pid,tampedido,f1,f2;
+    
+    f1 = open("client-server", O_RDONLY); 
     if(f1 == -1) {
         printf("%s\n", strerror(errno));
         return 1;
     }
 
-    int f2 = open("server-client", O_WRONLY);
+    f2 = open("server-client", O_WRONLY);
     if(f2 == -1){ 
         printf("%s\n", strerror(errno));
         return 2;
     }
-
-    //int pipefd[2];
-    //pipe(pipefd);
-    //dup2(f1,pipefd[0]);
-    //close(f1);
-    //fcntl(pipefd[0], F_SETFL, O_NONBLOCK);//Faz com que o pipe que lê do fifo não bloqueie
 
     int transConfig[7];
     //Este array de inteiros vai conter o número máximo de cada transformação de acordo com o primeiro argumento do servidor
@@ -281,34 +287,35 @@ int main(int argc, char *argv[]){
     char command[300];
 
     while(1){//Ciclo que executa os pedidos enviados pelo cliente
-        n = read(f1,command,sizeof(command));
+        //Vamos ter que criar 2 fifos por cada pedido, um que recebe dados e outro que envia
 
+        n = read(f1,command,sizeof(command));
         if(n > 0){//Recebemos um novo pedido
             printf("%s\n", command);
             read(f1,&tampedido,sizeof(int));
 
             Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
-            buildPedido(command,pe,tampedido);
+            buildPedido(command,pe,tampedido,f1,f2);
             //Na struct pe vamos ter o tamanho do pedido, o pedido e o número de instâncias necessárias para cada transformação
 
             if(strcmp(pe->pedido[0],"proc-file")==0){//Proc-file command
 
                 if(verificaPedido(transConfig,pe->transNecess)==0){//Comando em fila de espera
 
-                    write(f2,"Pedido em fila de espera", 25 * sizeof(char));
+                    write(f2,"Pedido em fila de espera\n", 25 * sizeof(char));
                     colocaFilaEspera(pe,fesp);
 
                 }else{//Comando vai ser executado
 
-                    write(f2,"Pedido vai ser executado", 25 * sizeof(char));
-                    pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);  
+                    write(f2,"Pedido a ser processado\n", 25 * sizeof(char));
+                    pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido, pe->fifo_ouput);  
                     //Depois de o pedido entrar em execução o pedido assume o pid o processo
-                    if(waitpid(pid,NULL,WNOHANG) == 0){//Ainda não acabou a execução
-                        //Inserir num array a ser definido
+                    //if(waitpid(pid,NULL,WNOHANG) == 0){//Ainda não acabou a execução
+                    //    //Inserir num array a ser definido
 
-                    }else if(waitpid(pid,NULL,WNOHANG) == pe->pid){
-                        write(f2,"Pedido concluido", 16*sizeof(char));
-                    }
+                    //}else if(waitpid(pid,NULL,WNOHANG) == pe->pid){
+                    //    write(f2,"Pedido concluido", 16*sizeof(char));
+                    //}
 
                 }
             }else if(strcmp(pe->pedido[0],"status")==0){//Status command
@@ -318,7 +325,7 @@ int main(int argc, char *argv[]){
         }else if(n < 0){//O pipe está vazio (Não se recebeu nenhum comando)
             //Se não recebermos num novo comando vamos verificar primeiro se algum pedido já acabou ou não
             //Depois verificamos se podemos mandar executar pedido que estivessem na fila de espera
-
+            
         }
     }
     return 0;

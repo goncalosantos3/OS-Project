@@ -1,7 +1,11 @@
 #include "sdstored.h"
 
 typedef struct pedidosEmExecucao{
-    int nrPedidosExecucao;
-    int sizeArray;
-    Pedido *emExecucao;
-} * PedidosEmExecucao
+    Pedido atual;
+    PedidosEmExecucao prox;
+} * PedidosEmExecucao;  
+
+PedidosEmExecucao initEmExecucao();
+int isEmptyEmExecucao(PedidosEmExecucao pexec);
+void colocaEmExecucao(Pedido pe, PedidosEmExecucao pexec);
+void verificaPedidosConcluidos(PedidosEmExecucao pexec);

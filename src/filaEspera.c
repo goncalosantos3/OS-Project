@@ -11,7 +11,8 @@
 #include "../libs/filaEspera.h"
 
 FilaEspera initFilaEspera(){
-    FilaEspera fesp = malloc(sizeof(struct filaEspera) + 30 * sizeof(Pedido));
+    FilaEspera fesp = malloc(sizeof(struct filaEspera));
+    fesp->fila = malloc( 30 * sizeof(Pedido));
     fesp->nrPedidosFila=0;
     fesp->sizeFila=30;
 

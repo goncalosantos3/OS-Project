@@ -28,12 +28,8 @@
 *   recebe informação enviada pelo servidor.
 */
 
-void enviaInfoServer(int tampedido, char *argv[], int f1, int transNecess[]){        
+void enviaInfoServer(int tampedido, char *argv[], int f1){        
     char command[300];
-
-    for(int j=0;j<7;j++){
-        transNecess[j]=0;
-    }
 
     for(int j=0;j<tampedido;j++){
 
@@ -77,9 +73,8 @@ void recebeInfoServer(char info[], int f2){//Por desenvolver
 
 int main(int argc, char *argv[]){
     int tampedido=argc-1;
-    int transNecess[7];
 
-    int p=mkfifo("client-server",0777);//Cria o fifo que comunica entre o cliente e o servidor
+    int p = mkfifo("client-server",0777);//Cria o fifo que comunica entre o cliente e o servidor
     if(p==-1){
         if(errno != EEXIST){//Quando o erro não é o erro de o fifo já existir
             printf("Erro ao construir fifo\n");
@@ -87,7 +82,7 @@ int main(int argc, char *argv[]){
         }
     }
 
-    p=mkfifo("server-client",0777);//Cria o fifo que comunica entre o cliente e o servidor
+    p = mkfifo("server-client",0777);//Cria o fifo que comunica entre o cliente e o servidor
     if(p==-1){
         if(errno != EEXIST){//Quando o erro não é o erro de o fifo já existir
             printf("Erro ao construir fifo\n");
@@ -109,10 +104,10 @@ int main(int argc, char *argv[]){
 
     if(strcmp(argv[1],"proc-file")==0){//./sdstore proc-file input_file output_file bcompress ...
         //Executa o primeiro pedido (recebido como argumento do programa)
-        enviaInfoServer(tampedido,argv,f1,transNecess);
+        enviaInfoServer(tampedido,argv,f1);
 
-        //char info[100];
-        //recebeInfoServer(info,f2);
+        char info[100];
+        recebeInfoServer(info,f2);
 
     }else if(strcmp(argv[1],"status")==0){//./sdstore status
         
