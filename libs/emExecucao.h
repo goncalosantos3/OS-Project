@@ -7,5 +7,5 @@ typedef struct pedidosEmExecucao{
 
 PedidosEmExecucao initEmExecucao();
 int isEmptyEmExecucao(PedidosEmExecucao pexec);
-void colocaEmExecucao(Pedido pe, PedidosEmExecucao pexec);
-void verificaPedidosConcluidos(PedidosEmExecucao pexec);
+PedidosEmExecucao colocaEmExecucao(Pedido pe, PedidosEmExecucao pexec, int transConfig[]);
+PedidosEmExecucao verificaPedidosConcluidos(PedidosEmExecucao pexec, int transConfig[]);
