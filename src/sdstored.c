@@ -9,6 +9,8 @@
 #include <string.h>
 #include "../libs/sdstored.h"
 #include "../libs/filaEspera.h"
+#include "../libs/emExecucao.h"
+#include "../libs/pedido.h"
 
 /*
 *   O servidor tem como função receber as tarefas passadas pelo cliente e aplicar as 
@@ -83,11 +85,6 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int
                     exit(1);
                 }
             }else if(i==nrpipes && ((pid=fork())==0)){//Último comando
-                if(fork()==0){//Filho que espera pelo final da execução do pedido
-                    waitpid(pid,NULL,0);
-                    write(f,"Pedido concluído\n", 18 * sizeof(char));
-                    close(0);
-                }
                 path = strcat(argv[2],"/");
                 path = strcat(path,transformacoes[i+3]);
 
@@ -118,11 +115,6 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int
 
     }else if(nrpipes==0){
         if((pid=fork())==0){
-            if(fork()==0){
-                waitpid(pid,NULL,0);
-                write(f,"Pedido concluído\n", 18 * sizeof(char));
-                close(0);
-            }
             path = strcat(argv[2],"/");
             path = strcat(path,transformacoes[3]);
 
@@ -227,54 +219,17 @@ int verificaPedido (int transConfig[], int transNecess[]){
     return r;
 }
 
-/*
-*   Função que vai construir o array de string transformacoes com toda a informação necessária
-*   para executar o pedido atual:
-*   - tipo de operação (proc-file ou status)
-*   - ficheiros input e output
-*   - e finalmente todas as transformações a executar 
-*/
-void buildPedido(char *command, Pedido pe, int tampedido, int f1, int f2){
-    char *str1, *str2;
-    int i=0;
-
-    str1=strdup(command);
-    while((str2=strsep(&str1," "))!=NULL){
-        pe->pedido[i]=str2;
-        if(strcmp(str2,"bcompress")==0){
-            pe->transNecess[0]++;
-        }else if(strcmp(str2,"bdecompress")==0){
-            pe->transNecess[1]++;
-        }else if(strcmp(str2,"decrypt")==0){
-            pe->transNecess[2]++;
-        }else if(strcmp(str2,"encrypt")==0){
-            pe->transNecess[3]++;
-        }else if(strcmp(str2,"gcompress")==0){
-            pe->transNecess[4]++;
-        }else if(strcmp(str2,"gdecompress")==0){
-            pe->transNecess[5]++;
-        }else if(strcmp(str2,"nop")==0){
-            pe->transNecess[6]++;
-        }
-        i++;
-    }
-    pe->fifo_input=f1;
-    pe->fifo_ouput=f2;
-    pe->tampedido=tampedido;
-    pe->pid=0;//Enquanto que o pedido não é executado o pid é 0
-}
-
 int main(int argc, char *argv[]){
-    int n,pid,tampedido,f1,f2;
-    
-    f1 = open("client-server", O_RDONLY); 
-    if(f1 == -1) {
+    int n,pid,tampedido,f1;
+
+    int p = mkfifo("clients-to-server",0660);
+    if(p==-1){
         printf("%s\n", strerror(errno));
         return 1;
     }
 
-    f2 = open("server-client", O_WRONLY);
-    if(f2 == -1){ 
+    f1 = open("clients-to-server", O_RDONLY);//Abre o fifo que recebe informação do servidor (criado pelo servidor)
+    if(f1 == -1) {
         printf("%s\n", strerror(errno));
         return 2;
     }
@@ -284,6 +239,7 @@ int main(int argc, char *argv[]){
     setTransConfig(argv[1],transConfig);
 
     FilaEspera fesp = initFilaEspera();
+    PedidosEmExecucao pexec = initEmExecucao();
     char command[300];
 
     while(1){//Ciclo que executa os pedidos enviados pelo cliente
@@ -295,9 +251,10 @@ int main(int argc, char *argv[]){
             read(f1,&tampedido,sizeof(int));
 
             Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
-            buildPedido(command,pe,tampedido,f1,f2);
+            buildPedido(command,pe,tampedido,f1);
+            printPedido(pe);
             //Na struct pe vamos ter o tamanho do pedido, o pedido e o número de instâncias necessárias para cada transformação
-
+            /*
             if(strcmp(pe->pedido[0],"proc-file")==0){//Proc-file command
 
                 if(verificaPedido(transConfig,pe->transNecess)==0){//Comando em fila de espera
@@ -306,24 +263,18 @@ int main(int argc, char *argv[]){
                     colocaFilaEspera(pe,fesp);
 
                 }else{//Comando vai ser executado
-
                     write(f2,"Pedido a ser processado\n", 25 * sizeof(char));
                     pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido, pe->fifo_ouput);  
-                    //Depois de o pedido entrar em execução o pedido assume o pid o processo
-                    //if(waitpid(pid,NULL,WNOHANG) == 0){//Ainda não acabou a execução
-                    //    //Inserir num array a ser definido
-
-                    //}else if(waitpid(pid,NULL,WNOHANG) == pe->pid){
-                    //    write(f2,"Pedido concluido", 16*sizeof(char));
-                    //}
-
+                    pexec = colocaEmExecucao(pe,pexec,transConfig);
                 }
             }else if(strcmp(pe->pedido[0],"status")==0){//Status command
                 //Por implementar
             }
-
+            */
         }else if(n < 0){//O pipe está vazio (Não se recebeu nenhum comando)
             //Se não recebermos num novo comando vamos verificar primeiro se algum pedido já acabou ou não
+            pexec = verificaPedidosConcluidos(pexec,transConfig);
+            
             //Depois verificamos se podemos mandar executar pedido que estivessem na fila de espera
             
         }

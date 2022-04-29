@@ -48,3 +48,5 @@ Pedido retiraFilaEspera(FilaEspera fesp){
     fesp->nrPedidosFila--;
     return proximo;
 }
+
+//Implementar uma função que atravessa a queue e verifica quais os pedidos que podem ser executados

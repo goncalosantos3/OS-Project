@@ -2,14 +2,20 @@ server: sdstored
 
 client: sdstore
 
-sdstored: obj/sdstored.o obj/filaEspera.o
-	gcc -g obj/sdstored.o obj/filaEspera.o -o sdstored
+sdstored: obj/sdstored.o obj/filaEspera.o obj/emExecucao.o obj/pedido.o
+	gcc -g obj/sdstored.o obj/filaEspera.o obj/emExecucao.o obj/pedido.o -o sdstored
 
 obj/sdstored.o: src/sdstored.c libs/sdstored.h
 	gcc -g -o obj/sdstored.o src/sdstored.c -c -Wall
 
 obj/filaEspera.o: src/filaEspera.c libs/filaEspera.h
 	gcc -g -o obj/filaEspera.o src/filaEspera.c -c -Wall
+
+obj/emExecucao.o: src/emExecucao.c libs/emExecucao.h 
+	gcc -g -o obj/emExecucao.o src/emExecucao.c -c -Wall
+
+obj/pedido.o: src/pedido.c libs/pedido.h 
+	gcc -g -o obj/pedido.o src/pedido.c -c -Wall
 
 sdstore: obj/sdstore.o
 	gcc -g obj/sdstore.o -o sdstore

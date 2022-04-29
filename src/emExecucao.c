@@ -7,7 +7,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include "emExecucao.h"
+#include "../libs/emExecucao.h"
+#include "../libs/sdstored.h"
 
 PedidosEmExecucao initEmExecucao(){
     PedidosEmExecucao pexec = NULL;
