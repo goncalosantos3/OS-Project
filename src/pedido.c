@@ -41,6 +41,7 @@ void buildPedido(char *command, Pedido pe, int tampedido, int f1){
         }
         i++;
     }
+    printf("ola\n");
     //Recebe o cliente o nome do fifo para enviar informação e abre o fifo
     int n = read(f1,fifo_name,sizeof(fifo_name));
     fifo_name[n]='\n';

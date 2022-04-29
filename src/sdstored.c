@@ -222,12 +222,6 @@ int verificaPedido (int transConfig[], int transNecess[]){
 int main(int argc, char *argv[]){
     int n,pid,tampedido,f1;
 
-    int p = mkfifo("clients-to-server",0660);
-    if(p==-1){
-        printf("%s\n", strerror(errno));
-        return 1;
-    }
-
     f1 = open("clients-to-server", O_RDONLY);//Abre o fifo que recebe informação do servidor (criado pelo servidor)
     if(f1 == -1) {
         printf("%s\n", strerror(errno));

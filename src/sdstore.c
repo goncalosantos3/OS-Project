@@ -42,12 +42,13 @@ void enviaInfoServer(int tampedido, char *argv[], char *fifo_name ,int f1){
             strcat(command," ");
         }
     }
+    printf("olA\n");
     printf("%s\n", command);
     write(f1,command,sizeof(command));
 
     write(f1,&tampedido,sizeof(int));
     //Manda para o servidor o número de argumentos no comando input
-
+    printf("%s\n", fifo_name);
     write(f1,fifo_name,sizeof(fifo_name));
 }
 
@@ -75,20 +76,11 @@ void recebeInfoServer(char info[], int f2){//Por desenvolver
 
 int main(int argc, char *argv[]){
     int tampedido=argc-1;   
-    char *fifo_name=NULL;
+    char fifo_name[30];
     char string[20];
-
-    int f1 = open("clients-to-server", O_WRONLY);//O cliente, por agora, apenas vai escrever no fifo
-    if(f1==-1){
-        printf("%s\n", strerror(errno));
-        return 3;
-    }
-
-    fifo_name = strcpy(fifo_name,"fifo-");
-    sprintf(string,"%d", getpid());
-    fifo_name = strcat(fifo_name,string);
-
-    int p = mkfifo(fifo_name,0660);//Cria o fifo que comunica entre o cliente e o servidor
+    int f1,f2;
+    
+    int p = mkfifo("clients-to-server",0777);
     if(p==-1){
         if(errno != EEXIST){//Quando o erro não é o erro de o fifo já existir
             printf("Erro ao construir fifo\n");
@@ -96,17 +88,34 @@ int main(int argc, char *argv[]){
         }
     }
 
-    int f2 = open(fifo_name, O_RDONLY);
-    if(f2 == -1){
+    f1 = open("clients-to-server", O_WRONLY);//O cliente, por agora, apenas vai escrever no fifo
+    if(f1==-1){
         printf("%s\n", strerror(errno));
-        return 4;
+        return 3;
     }
+    strcpy(fifo_name,"fifo-");
+    sprintf(string,"%d", getpid());
+    strcat(fifo_name,string);
+    printf("%s\n", fifo_name);
+
+    p = mkfifo(fifo_name,0777);//Cria o fifo que comunica entre o cliente e o servidor
+    if(p==-1){
+        if(errno != EEXIST){//Quando o erro não é o erro de o fifo já existir
+            printf("Erro ao construir fifo\n");
+            return 2;
+        }
+    }   
 
     if(strcmp(argv[1],"proc-file")==0){//./sdstore proc-file input_file output_file bcompress ...
         //Executa o primeiro pedido (recebido como argumento do programa)
         enviaInfoServer(tampedido,argv,fifo_name,f1);
 
         char info[100];
+        f2 = open(fifo_name, O_RDONLY);
+        if(f2 == -1){
+            printf("%s\n", strerror(errno));
+            return 4;
+        }
         recebeInfoServer(info,f2);
 
     }else if(strcmp(argv[1],"status")==0){//./sdstore status

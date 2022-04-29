@@ -24,4 +24,4 @@ obj/sdstore.o: src/sdstore.c libs/sdstore.h
 	gcc -g -o obj/sdstore.o src/sdstore.c -c -Wall
 
 clean:
-	rm -f obj/* tmp/* sdstore sdstored outputs/* server-client client-server
+	rm -f obj/* tmp/* sdstore sdstored outputs/* clients-to-server fifo-*
