@@ -24,7 +24,7 @@ int isEmptyEmExecucao(PedidosEmExecucao pexec){
 }
 
 //Insere um novo pedido em execução na lista ligada à cabeça
-void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int transConfig[]){
+void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int *transConfig){
     write(pe->fifo_ouput,"Pedido a ser processado\n", 25 * sizeof(char));
 
     PedidosEmExecucao novo = malloc(sizeof(struct pedidosEmExecucao));
@@ -40,7 +40,7 @@ void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int transConfig[]){
 
 //Definir função que verifica quais os pedidos em execucao que já concluiram a sua execucao
 
-void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int transConfig[]){
+void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int *transConfig){
     //Atravessa a lista ligada e verifica quais os pedidos que terminaram e quais não terminaram
 
     while((*pexec)!=NULL){
@@ -48,8 +48,9 @@ void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int transConfig[]){
             write((*pexec)->atual->fifo_ouput,"Pedido concluído\n",18 * sizeof(char));
             //Como o pedido terminou a sua execução vamos aumentar o número de instâncias disponíveis de cada transformação
             for(int i=0;i<7;i++){
-                transConfig[i] += (*pexec)->atual->transNecess[i];
+                transConfig[i] =  transConfig[i] + (*pexec)->atual->transNecess[i];
             }
+            //Ele não está a somar aqui não sei porque
             (*pexec)=(*pexec)->prox;//Retira o pedido que concluiu a sua execução da lista ligada
         }else{
             pexec=&(*pexec)->prox;

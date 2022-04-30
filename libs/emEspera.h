@@ -8,9 +8,8 @@ typedef struct emEspera{
     struct emEspera *prox;   
 }* PedidosEmEspera;
 
-
 PedidosEmEspera initEmEspera();
 int isEmptyEmEspera(PedidosEmEspera esp);
 void colocaEmEspera(Pedido pe, PedidosEmEspera *esp);
-void retiraPedidosParaExecucao(PedidosEmEspera *esp, PedidosEmExecucao pexec, int transConfig[], char *argv[]);
+void retiraPedidosParaExecucao(PedidosEmEspera *esp, PedidosEmExecucao pexec, int *transConfig, char *argv[]);
 #endif

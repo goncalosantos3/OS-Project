@@ -34,7 +34,7 @@ void colocaEmEspera(Pedido pe, PedidosEmEspera *esp){
 
 //Função que atravessa a lista ligada dos pedidos que estão em espera e retira os pedidos 
 //que podem ir para execução inserindo-os na lista ligada de pedidos para execução
-void retiraPedidosParaExecucao(PedidosEmEspera *esp, PedidosEmExecucao pexec, int transConfig[], char *argv[]){
+void retiraPedidosParaExecucao(PedidosEmEspera *esp, PedidosEmExecucao pexec, int *transConfig, char *argv[]){
 
     while((*esp)!=NULL){
         if(verificaPedido(transConfig,(*esp)->atual->transNecess)==1){

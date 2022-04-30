@@ -243,6 +243,11 @@ int main(int argc, char *argv[]){
             printf("Recebi pedido\n");
             read(f1,&tampedido,sizeof(int));
 
+            for(int i=0;i<7;i++){
+                printf("%d ", transConfig[i]);
+            }
+            printf("\n");
+
             Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
             buildPedido(command,pe,tampedido,f1);
             printPedido(pe);
@@ -251,8 +256,10 @@ int main(int argc, char *argv[]){
             if(strcmp(pe->pedido[0],"proc-file")==0){//Proc-file command
 
                 if(verificaPedido(transConfig,pe->transNecess)==0){//Comando em fila de espera
+                    printf("Para a fila de espera\n");
                     colocaEmEspera(pe,&esp);
                 }else{//Comando vai ser executado
+                    printf("Vai executar\n");
                     pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);  
                     colocaEmExecucao(pe,&pexec,transConfig);
                 }
