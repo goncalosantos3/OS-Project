@@ -42,7 +42,8 @@ void retiraPedidosParaExecucao(PedidosEmEspera *esp, PedidosEmExecucao pexec, in
             executeProcFileCommand(argv,(*esp)->atual->pedido,(*esp)->atual->tampedido);
             colocaEmExecucao((*esp)->atual,&pexec,transConfig);
             (*esp)=(*esp)->prox;
+        }else{
+            esp=&(*esp)->prox;
         }
-        esp=&(*esp)->prox;
     }
 }

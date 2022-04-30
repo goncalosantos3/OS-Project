@@ -50,9 +50,9 @@ void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int transConfig[]){
             for(int i=0;i<7;i++){
                 transConfig[i] += (*pexec)->atual->transNecess[i];
             }
-            printPedido((*pexec)->atual);
             (*pexec)=(*pexec)->prox;//Retira o pedido que concluiu a sua execução da lista ligada
+        }else{
+            pexec=&(*pexec)->prox;
         }
-        pexec=&(*pexec)->prox;
     }
 }
