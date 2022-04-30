@@ -45,7 +45,9 @@ PedidosEmExecucao verificaPedidosConcluidos(PedidosEmExecucao pexec, int transCo
     PedidosEmExecucao *aux = &pexec;
 
     while((*aux)!=NULL){
+        printf("Testa se o pedido terminou\n");
         if(waitpid((*aux)->atual->pid,NULL,WNOHANG)!=0){//O pedido já acabou
+            printf("Pedido concluiu\n");
             write((*aux)->atual->fifo_ouput,"Pedido concluído\n",18*sizeof(char));
             //Como o pedido terminou a sua execução vamos aumentar o número de instâncias disponíveis de cada transformação
             for(int i=0;i<7;i++){

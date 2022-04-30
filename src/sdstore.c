@@ -48,7 +48,7 @@ void enviaInfoServer(int tampedido, char *argv[], char *fifo_name ,int f1){
     write(f1,&tampedido,sizeof(int));
     //Manda para o servidor o número de argumentos no comando input
     printf("%s\n", fifo_name);
-    write(f1,fifo_name,sizeof(fifo_name)+1);
+    write(f1,fifo_name,30 * sizeof(char));
 }
 
 void recebeInfoServer(char info[], int f2){//Por desenvolver
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]){
     if(strcmp(argv[1],"proc-file")==0){//./sdstore proc-file input_file output_file bcompress ...
         //Executa o primeiro pedido (recebido como argumento do programa)
         enviaInfoServer(tampedido,argv,fifo_name,f1);
-        
+
         char info[100];
         f2 = open(fifo_name, O_RDONLY);
         if(f2 == -1){
