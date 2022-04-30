@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <string.h>
 #include "../libs/sdstored.h"
-#include "../libs/filaEspera.h"
+#include "../libs/emEspera.h"
 #include "../libs/emExecucao.h"
 #include "../libs/pedido.h"
 
@@ -31,7 +31,7 @@
 *   - E finalmente todas as transformações a serem executadas para completar o pedido
 *   Recebe ainda o parametro nrargs que se trata do comprimento do array de strings transformacoes.
 */
-int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int f){
+int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
     char *path; int pid;
     int nrpipes=nrargs-4;
 
@@ -220,7 +220,7 @@ int verificaPedido (int transConfig[], int transNecess[]){
 }
 
 int main(int argc, char *argv[]){
-    int n,pid,tampedido,f1;
+    int n,tampedido,f1;
 
     f1 = open("clients-to-server", O_RDONLY);//Abre o fifo que recebe informação do servidor (criado pelo servidor)
     if(f1 == -1) {
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]){
     //Este array de inteiros vai conter o número máximo de cada transformação de acordo com o primeiro argumento do servidor
     setTransConfig(argv[1],transConfig);
 
-    FilaEspera fesp = initFilaEspera();
+    PedidosEmEspera fesp = initEmEspera();
     PedidosEmExecucao pexec = initEmExecucao();
     char command[300];
 
@@ -248,29 +248,25 @@ int main(int argc, char *argv[]){
             buildPedido(command,pe,tampedido,f1);
             printPedido(pe);
             //Na struct pe vamos ter o tamanho do pedido, o pedido e o número de instâncias necessárias para cada transformação
-            /*
+
             if(strcmp(pe->pedido[0],"proc-file")==0){//Proc-file command
 
                 if(verificaPedido(transConfig,pe->transNecess)==0){//Comando em fila de espera
-
-                    write(f2,"Pedido em fila de espera\n", 25 * sizeof(char));
-                    colocaFilaEspera(pe,fesp);
-
+                    colocaEmEspera(pe,fesp);
                 }else{//Comando vai ser executado
-                    write(f2,"Pedido a ser processado\n", 25 * sizeof(char));
-                    pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido, pe->fifo_ouput);  
+                    pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);  
                     pexec = colocaEmExecucao(pe,pexec,transConfig);
                 }
             }else if(strcmp(pe->pedido[0],"status")==0){//Status command
                 //Por implementar
+
             }
-            */
+
         }else if(n < 0){//O pipe está vazio (Não se recebeu nenhum comando)
             //Se não recebermos num novo comando vamos verificar primeiro se algum pedido já acabou ou não
             pexec = verificaPedidosConcluidos(pexec,transConfig);
-            
-            //Depois verificamos se podemos mandar executar pedido que estivessem na fila de espera
-            
+            fesp = retiraPedidosParaExecucao(fesp,pexec,transConfig,argv);
+            //Depois verificamos se podemos mandar executar pedido que estivessem na fila de espera   
         }
     }
     return 0;

@@ -43,10 +43,12 @@ void buildPedido(char *command, Pedido pe, int tampedido, int f1){
     }
     printf("ola\n");
     //Recebe o cliente o nome do fifo para enviar informação e abre o fifo
-    int n = read(f1,fifo_name,sizeof(fifo_name));
-    fifo_name[n]='\n';
+    read(f1,fifo_name,sizeof(fifo_name));
     printf("Nome do fifo -> %s\n", fifo_name);
     pe->fifo_ouput = open(fifo_name, O_WRONLY);
+    if(pe->fifo_ouput==-1){
+        printf("%s\n", strerror(errno));
+    }
 
     pe->tampedido=tampedido;
     pe->pid=0;//Enquanto que o pedido não é executado o pid é 0

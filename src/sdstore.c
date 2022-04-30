@@ -42,14 +42,13 @@ void enviaInfoServer(int tampedido, char *argv[], char *fifo_name ,int f1){
             strcat(command," ");
         }
     }
-    printf("olA\n");
     printf("%s\n", command);
     write(f1,command,sizeof(command));
 
     write(f1,&tampedido,sizeof(int));
     //Manda para o servidor o número de argumentos no comando input
     printf("%s\n", fifo_name);
-    write(f1,fifo_name,sizeof(fifo_name));
+    write(f1,fifo_name,sizeof(fifo_name)+1);
 }
 
 void recebeInfoServer(char info[], int f2){//Por desenvolver
@@ -96,7 +95,6 @@ int main(int argc, char *argv[]){
     strcpy(fifo_name,"fifo-");
     sprintf(string,"%d", getpid());
     strcat(fifo_name,string);
-    printf("%s\n", fifo_name);
 
     p = mkfifo(fifo_name,0777);//Cria o fifo que comunica entre o cliente e o servidor
     if(p==-1){
@@ -109,7 +107,7 @@ int main(int argc, char *argv[]){
     if(strcmp(argv[1],"proc-file")==0){//./sdstore proc-file input_file output_file bcompress ...
         //Executa o primeiro pedido (recebido como argumento do programa)
         enviaInfoServer(tampedido,argv,fifo_name,f1);
-
+        
         char info[100];
         f2 = open(fifo_name, O_RDONLY);
         if(f2 == -1){
