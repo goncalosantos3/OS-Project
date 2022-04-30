@@ -23,28 +23,26 @@ int isEmptyEmEspera(PedidosEmEspera esp){
     return 0;
 }
 
-PedidosEmEspera colocaEmEspera(Pedido pe, PedidosEmEspera esp){
+void colocaEmEspera(Pedido pe, PedidosEmEspera *esp){
     write(pe->fifo_ouput,"Pedido em fila de espera\n", 25 * sizeof(char));
 
     PedidosEmEspera aux = malloc(sizeof(struct emEspera));
     aux->atual=pe;
-    aux->prox=esp;
-    return esp;
+    aux->prox=(*esp);
+    (*esp)=aux;
 }
 
 //Função que atravessa a lista ligada dos pedidos que estão em espera e retira os pedidos 
 //que podem ir para execução inserindo-os na lista ligada de pedidos para execução
-PedidosEmEspera retiraPedidosParaExecucao(PedidosEmEspera esp, PedidosEmExecucao pexec, int transConfig[], char *argv[]){
-    PedidosEmEspera *p = &esp;
+void retiraPedidosParaExecucao(PedidosEmEspera *esp, PedidosEmExecucao pexec, int transConfig[], char *argv[]){
 
-    while((*p)!=NULL){
-        if(verificaPedido(transConfig,(*p)->atual->transNecess)==1){
+    while((*esp)!=NULL){
+        if(verificaPedido(transConfig,(*esp)->atual->transNecess)==1){
             //O pedido pode ser executado
-            executeProcFileCommand(argv,(*p)->atual->pedido,(*p)->atual->tampedido);
-            colocaEmExecucao((*p)->atual,pexec,transConfig);
-            (*p)=(*p)->prox;
+            executeProcFileCommand(argv,(*esp)->atual->pedido,(*esp)->atual->tampedido);
+            colocaEmExecucao((*esp)->atual,&pexec,transConfig);
+            (*esp)=(*esp)->prox;
         }
-        p=&(*p)->prox;
+        esp=&(*esp)->prox;
     }
-    return esp;
 }

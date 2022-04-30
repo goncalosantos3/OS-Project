@@ -119,7 +119,6 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
             path = strcat(path,transformacoes[3]);
 
             int f1 = open(transformacoes[1],O_RDONLY);
-            printf("%s\n", transformacoes[1]);
             if(f1==-1){
                 printf("%s\n", strerror(errno));
             }
@@ -222,7 +221,7 @@ int verificaPedido (int transConfig[], int transNecess[]){
 int main(int argc, char *argv[]){
     int n,tampedido,f1;
 
-    f1 = open("clients-to-server", O_RDONLY);//Abre o fifo que recebe informação do servidor (criado pelo servidor)
+    f1 = open("clients-to-server", O_RDONLY | O_NONBLOCK);//Abre o fifo que recebe informação do servidor (criado pelo servidor)
     if(f1 == -1) {
         printf("%s\n", strerror(errno));
         return 2;
@@ -232,7 +231,7 @@ int main(int argc, char *argv[]){
     //Este array de inteiros vai conter o número máximo de cada transformação de acordo com o primeiro argumento do servidor
     setTransConfig(argv[1],transConfig);
 
-    PedidosEmEspera fesp = initEmEspera();
+    PedidosEmEspera esp = initEmEspera();
     PedidosEmExecucao pexec = initEmExecucao();
     char command[300];
 
@@ -241,7 +240,7 @@ int main(int argc, char *argv[]){
 
         n = read(f1,command,sizeof(command));
         if(n > 0){//Recebemos um novo pedido
-            printf("%s\n", command);
+            printf("Recebi pedido\n");
             read(f1,&tampedido,sizeof(int));
 
             Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
@@ -252,10 +251,10 @@ int main(int argc, char *argv[]){
             if(strcmp(pe->pedido[0],"proc-file")==0){//Proc-file command
 
                 if(verificaPedido(transConfig,pe->transNecess)==0){//Comando em fila de espera
-                    colocaEmEspera(pe,fesp);
+                    colocaEmEspera(pe,&esp);
                 }else{//Comando vai ser executado
                     pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);  
-                    pexec = colocaEmExecucao(pe,pexec,transConfig);
+                    colocaEmExecucao(pe,&pexec,transConfig);
                 }
             }else if(strcmp(pe->pedido[0],"status")==0){//Status command
                 //Por implementar
@@ -264,8 +263,8 @@ int main(int argc, char *argv[]){
 
         }else if(n < 0){//O pipe está vazio (Não se recebeu nenhum comando)
             //Se não recebermos num novo comando vamos verificar primeiro se algum pedido já acabou ou não
-            pexec = verificaPedidosConcluidos(pexec,transConfig);
-            fesp = retiraPedidosParaExecucao(fesp,pexec,transConfig,argv);
+            verificaPedidosConcluidos(&pexec,transConfig);
+            retiraPedidosParaExecucao(&esp,pexec,transConfig,argv);
             //Depois verificamos se podemos mandar executar pedido que estivessem na fila de espera   
         }
     }

@@ -17,45 +17,42 @@ PedidosEmExecucao initEmExecucao(){
 
 int isEmptyEmExecucao(PedidosEmExecucao pexec){
 
-    if(pexec->atual == NULL && pexec->prox==NULL){
+    if((pexec->atual == NULL && pexec->prox==NULL) || pexec==NULL){
         return 1;
     }
     return 0;
 }
 
 //Insere um novo pedido em execução na lista ligada à cabeça
-PedidosEmExecucao colocaEmExecucao(Pedido pe, PedidosEmExecucao pexec, int transConfig[]){
+void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int transConfig[]){
     write(pe->fifo_ouput,"Pedido a ser processado\n", 25 * sizeof(char));
 
-    PedidosEmExecucao aux = malloc(sizeof(struct pedidosEmExecucao));
-    aux->atual = pe;
-    aux->prox=pexec;
+    PedidosEmExecucao novo = malloc(sizeof(struct pedidosEmExecucao));
+    novo->atual = pe;
+    novo->prox = (*pexec);
     //Ao por em execução um novo pedido temos que reduzir o número de instâncias disponiveis de cada transformaçao
     for(int i=0;i<7;i++){
         transConfig[i] -= pe->transNecess[i];
     }
-    return aux;
+    (*pexec) = novo;
 }
 
 
 //Definir função que verifica quais os pedidos em execucao que já concluiram a sua execucao
 
-PedidosEmExecucao verificaPedidosConcluidos(PedidosEmExecucao pexec, int transConfig[]){
+void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int transConfig[]){
     //Atravessa a lista ligada e verifica quais os pedidos que terminaram e quais não terminaram
-    PedidosEmExecucao *aux = &pexec;
 
-    while((*aux)!=NULL){
-        printf("Testa se o pedido terminou\n");
-        if(waitpid((*aux)->atual->pid,NULL,WNOHANG)!=0){//O pedido já acabou
-            printf("Pedido concluiu\n");
-            write((*aux)->atual->fifo_ouput,"Pedido concluído\n",18*sizeof(char));
+    while((*pexec)!=NULL){
+        if(waitpid((*pexec)->atual->pid,NULL,WNOHANG)!=0){//O pedido já acabou
+            write((*pexec)->atual->fifo_ouput,"Pedido concluído\n",18 * sizeof(char));
             //Como o pedido terminou a sua execução vamos aumentar o número de instâncias disponíveis de cada transformação
             for(int i=0;i<7;i++){
-                transConfig[i] += (*aux)->atual->transNecess[i];
+                transConfig[i] += (*pexec)->atual->transNecess[i];
             }
-            (*aux)=(*aux)->prox;//Retira o pedido que concluiu a sua execução da lista ligada
+            printPedido((*pexec)->atual);
+            (*pexec)=(*pexec)->prox;//Retira o pedido que concluiu a sua execução da lista ligada
         }
-        aux=&(*aux)->prox;
+        pexec=&(*pexec)->prox;
     }
-    return pexec;
 }
