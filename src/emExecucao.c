@@ -48,7 +48,7 @@ void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int *transConfig){
             write((*pexec)->atual->fifo_ouput,"Pedido concluído\n",18 * sizeof(char));
             //Como o pedido terminou a sua execução vamos aumentar o número de instâncias disponíveis de cada transformação
             for(int i=0;i<7;i++){
-                transConfig[i] =  transConfig[i] + (*pexec)->atual->transNecess[i];
+                transConfig[i] += (*pexec)->atual->transNecess[i];
             }
             //Ele não está a somar aqui não sei porque
             (*pexec)=(*pexec)->prox;//Retira o pedido que concluiu a sua execução da lista ligada

@@ -150,7 +150,7 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
 *   i=5:  gdecompress
 *   i=6:  nop
 */
-void setTransConfig(char *configFile, int transConfig[]){
+void setTransConfig(char *configFile, int *transConfig){
     char line[100]; char c;
     int n,i=0,j;
 
@@ -203,19 +203,14 @@ void setTransConfig(char *configFile, int transConfig[]){
 *   número de instâncias disponíveis para cada transformação no array transConfig
 *   Devolve 1 se o pedido pode ser executado no momento 0 caso contrário.
 */
-int verificaPedido (int transConfig[], int transNecess[]){ 
-    int r=1;    
-    for(int i=0;i<7 && r==1;i++){
+int verificaPedido (int *transConfig, int transNecess[]){ 
+
+    for(int i=0;i<7;i++){
         if(transNecess[i]>transConfig[i]){
-            r=0;
+            return 0;
         }
     }   
-    if(r==1){
-        for(int i=0;i<7;i++){
-            transConfig[i]-=transNecess[i];
-        }
-    }
-    return r;
+    return 1;
 }
 
 int main(int argc, char *argv[]){
@@ -227,7 +222,8 @@ int main(int argc, char *argv[]){
         return 2;
     }
 
-    int transConfig[7];
+    int *transConfig;
+    transConfig = malloc(7 * sizeof(int));
     //Este array de inteiros vai conter o número máximo de cada transformação de acordo com o primeiro argumento do servidor
     setTransConfig(argv[1],transConfig);
 
