@@ -87,12 +87,17 @@ int recebeInfoServer(char info[], char *fifo_name){//Por desenvolver
 }
 
 int recebeInfoServerStatus(char *info, char *fifo_name){
+    int n;
     int f2 = open(fifo_name, O_RDONLY);
     if(f2 == -1){
         printf("%s\n", strerror(errno));
         return 4;
     }
 
+    while((n=read(f2,info,sizeof(info))>0) && strcmp(info,"Terminou")!=0){
+        info[n]='\n';
+        write(1,info,n * sizeof(char));
+    }
     return f2;
 }
 

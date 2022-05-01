@@ -227,6 +227,7 @@ void statusServer(Pedido pe, PedidosEmExecucao pexec){
         write(pe->fifo_ouput,string,sizeof(string));
         task++;
     }
+    write(pe->fifo_ouput,"Terminou", 9 * sizeof(char));
 }
 
 int main(int argc, char *argv[]){
