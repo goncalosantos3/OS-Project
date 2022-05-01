@@ -213,8 +213,32 @@ int verificaPedido (int *transConfig, int transNecess[]){
     return 1;
 }
 
+void statusServer(Pedido pe, PedidosEmExecucao pexec){
+    PedidosEmExecucao aux = pexec;
+    int task=0,tam; char string[300];
+
+    while(aux!=NULL){
+        tam=aux->atual->tampedido;
+        sprintf(string,"task #%d: ", task);
+        for(int i=0; i<tam; i++){
+            strcat(string,aux->atual->pedido[i]);
+        }
+        strcat(string,"\n");
+        write(pe->fifo_ouput,string,sizeof(string));
+        task++;
+    }
+}
+
 int main(int argc, char *argv[]){
     int n,tampedido,f1;
+
+    int p = mkfifo("clients-to-server",0777);
+    if(p==-1){
+        if(errno != EEXIST){//Quando o erro não é o erro de o fifo já existir
+            printf("Erro ao construir fifo\n");
+            return 2;
+        }
+    }
 
     f1 = open("clients-to-server", O_RDONLY | O_NONBLOCK);//Abre o fifo que recebe informação do servidor (criado pelo servidor)
     if(f1 == -1) {
@@ -257,17 +281,17 @@ int main(int argc, char *argv[]){
                 }else{//Comando vai ser executado
                     printf("Vai executar\n");
                     pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);  
-                    colocaEmExecucao(pe,&pexec,transConfig);
+                    colocaEmExecucao(pe,&pexec,transConfig,argv);
                 }
             }else if(strcmp(pe->pedido[0],"status")==0){//Status command
-                //Por implementar
-
+                printf("Status\n");
+                statusServer(pe,pexec);
             }
 
         }else if(n < 0){//O pipe está vazio (Não se recebeu nenhum comando)
             //Se não recebermos num novo comando vamos verificar primeiro se algum pedido já acabou ou não
             verificaPedidosConcluidos(&pexec,transConfig);
-            retiraPedidosParaExecucao(&esp,pexec,transConfig,argv);
+            retiraPedidosParaExecucao(&esp,&pexec,transConfig,argv);
             //Depois verificamos se podemos mandar executar pedido que estivessem na fila de espera   
         }
     }

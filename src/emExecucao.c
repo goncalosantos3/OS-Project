@@ -24,9 +24,10 @@ int isEmptyEmExecucao(PedidosEmExecucao pexec){
 }
 
 //Insere um novo pedido em execução na lista ligada à cabeça
-void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int *transConfig){
+void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int *transConfig, char *argv[]){
     write(pe->fifo_ouput,"Pedido a ser processado\n", 25 * sizeof(char));
 
+    executeProcFileCommand(argv,pe->pedido,pe->tampedido);
     PedidosEmExecucao novo = malloc(sizeof(struct pedidosEmExecucao));
     novo->atual = pe;
     novo->prox = (*pexec);
@@ -45,7 +46,7 @@ void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int *transConfig){
 
     while((*pexec)!=NULL){
         if(waitpid((*pexec)->atual->pid,NULL,WNOHANG)!=0){//O pedido já acabou
-            write((*pexec)->atual->fifo_ouput,"Pedido concluído\n",18 * sizeof(char));
+            write((*pexec)->atual->fifo_ouput,"Pedido concluído\n", 18 * sizeof(char));
             //Como o pedido terminou a sua execução vamos aumentar o número de instâncias disponíveis de cada transformação
             for(int i=0;i<7;i++){
                 transConfig[i] += (*pexec)->atual->transNecess[i];
@@ -55,5 +56,14 @@ void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int *transConfig){
         }else{
             pexec=&(*pexec)->prox;
         }
+    }
+}
+
+void printListaLigadaEmExecucao(PedidosEmExecucao pexec){
+    PedidosEmExecucao aux = pexec;
+
+    while(aux!=NULL){
+        printPedido(aux->atual);
+        aux=aux->prox;
     }
 }
