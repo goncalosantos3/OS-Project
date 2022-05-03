@@ -33,103 +33,111 @@
 */
 int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
     char *path; int pid;
-    int nrpipes=nrargs-4;
+    int nrpipes = nrargs-4;
 
-    if(nrpipes>=1){//Só precisamos de pipes se houverem 2 ou mais transformações
+    //Só precisamos de pipes se houverem 2 ou mais transformações
+    if(nrpipes >= 1){
 
         int pipes[nrpipes][2];
-        for(int i=0;i<nrpipes;i++){
-            if(pipe(pipes[i])<0){
+        for(int i = 0; i < nrpipes; i++){
+            if(pipe(pipes[i]) < 0){
                 printf("%s\n", strerror(errno));
             }
         }
 
-        for(int i=0;i<=nrpipes;i++){
-
-            if(i==0 && fork()==0){//Primeiro comando
+        for(int i = 0; i <= nrpipes; i++){
+            //Primeiro comando
+            if(i == 0 && fork() == 0){
                 path = strcat(argv[2],"/");
                 path = strcat(path,transformacoes[i+3]);
                 //printf("%s\n", path);
                 int f = open(transformacoes[1],O_RDONLY);
-                if(f==-1){
+                if(f == -1){
                     printf("%s\n", strerror(errno));
                 }
-                dup2(f,0);
-                dup2(pipes[0][1],1);
+                dup2(f, 0);
+                dup2(pipes[0][1], 1);
                 close(f);
 
-                for(int i=0;i<nrpipes;i++){//Fecha todos os pipes
+                //Fecha todos os pipes
+                for(int i = 0; i < nrpipes; i++){
                     close(pipes[i][0]);
                     close(pipes[i][1]);
                 }
 
-                if(execl(path,transformacoes[i+3],NULL)==-1){
+                if(execl(path, transformacoes[i+3], NULL) == -1){
                     printf("%s\n", strerror(errno));
                     exit(1);
                 }
             }
-            if(i>0 && i<nrpipes && fork()==0){//Comandos intermédios
-                path = strcat(argv[2],"/");
-                path = strcat(path,transformacoes[i+3]);
+            //Comandos intermédios
+            if(i > 0 && i < nrpipes && fork() == 0){
+                path = strcat(argv[2], "/");
+                path = strcat(path, transformacoes[i+3]);
                 //printf("%s\n", path);
                 dup2(pipes[i-1][0],0);
                 dup2(pipes[i][1],1);
 
-                for(int i=0;i<nrpipes;i++){//Fecha todos os pipes
+                //Fecha todos os pipes
+                for(int i = 0; i < nrpipes; i++){
                     close(pipes[i][0]);
                     close(pipes[i][1]);
                 }
 
-                if(execl(path,transformacoes[i+3],NULL)==-1){
+                if(execl(path,transformacoes[i+3], NULL) == -1){
                     printf("%s\n", strerror(errno));
                     exit(1);
                 }
-            }else if(i==nrpipes && ((pid=fork())==0)){//Último comando
+            }
+            //Último comando
+            else if(i == nrpipes && ((pid = fork()) == 0)){
                 path = strcat(argv[2],"/");
                 path = strcat(path,transformacoes[i+3]);
 
                 int f = open(transformacoes[2],O_CREAT | O_WRONLY | O_TRUNC, 0660);
-                if(f==-1){
+                if(f == -1){
                     printf("%s\n", strerror(errno));
                 }
                 dup2(pipes[i-1][0],0);
-                dup2(f,1);
+                dup2(f, 1);
                 close(f);
 
-                for(int i=0;i<nrpipes;i++){//Fecha todos os pipes
+                //Fecha todos os pipes
+                for(int i = 0; i < nrpipes; i++){
                     close(pipes[i][0]);
                     close(pipes[i][1]);
                 }
                 
-                if(execl(path,transformacoes[i+3],NULL)==-1){
+                if(execl(path, transformacoes[i+3], NULL) == -1){
                     printf("%s\n", strerror(errno));
                     exit(1);
                 }
             }
         }  
-
-        for(int i=0;i<nrpipes;i++){//Fecha todos os pipes
+        //Fecha todos os pipes
+        for(int i = 0; i < nrpipes; i++){
             close(pipes[i][0]);
             close(pipes[i][1]);
         }
 
-    }else if(nrpipes==0){
-        if((pid=fork())==0){
+    }
+    else if(nrpipes == 0){
+        if((pid = fork()) == 0){
             path = strcat(argv[2],"/");
             path = strcat(path,transformacoes[3]);
 
             int f1 = open(transformacoes[1],O_RDONLY);
-            if(f1==-1){
+            if(f1 == -1){
                 printf("%s\n", strerror(errno));
             }
             int f2 = open(transformacoes[2],O_CREAT | O_WRONLY | O_TRUNC, 0660);
-            if(f2==-1){
+            if(f2 == -1){
                 printf("%s\n", strerror(errno));
             }
             dup2(f1,0);
             dup2(f2,1);
             close(f1); close(f2);
-            if(execl(path,transformacoes[3],NULL)==-1){
+            if(execl(path,transformacoes[3],NULL) == -1){
                 printf("%s\n", strerror(errno));
                 exit(1);
             }
@@ -152,45 +160,55 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
 */
 void setTransConfig(char *configFile, int *transConfig){
     char line[100]; char c;
-    int n,i=0,j;
+    int n, i = 0, j;
 
     int f = open(configFile,O_RDONLY);
-    if(f==-1){
+    if(f == -1){
         printf("%s\n", strerror(errno));
     }
 
-    while((n=read(f,&c,sizeof(char)))>0){//O ficheiro config tem sempre 7 linhas (número de transformações)
+    //O ficheiro config tem sempre 7 linhas (número de transformações)
+    while((n = read(f, &c, sizeof(char))) > 0){
         if(c == ' '){
-            line[i++]='\0';
+            line[i++] = '\0';
             //Associa a transformação com a sua posição no array transConfig
-            if(strcmp(line,"bcompress")==0){
-                j=0;
-            }else if(strcmp(line,"bdecompress")==0){
-                j=1;
-            }else if(strcmp(line,"decrypt")==0){
-                j=2;
-            }else if(strcmp(line,"encrypt")==0){
-                j=3;
-            }else if(strcmp(line,"gcompress")==0){
-                j=4;
-            }else if(strcmp(line,"gdecompress")==0){
-                j=5;
-            }else if(strcmp(line,"nop")==0){
-                j=6;
+            if(strcmp(line,"bcompress")   == 0){
+                j = 0;
             }
-            i=0;
-        }else if(c =='\n'){
-            line[i++]='\0';
-            transConfig[j]=atoi(line);
-            i=0;
-        }else{
-            line[i++]=c;
+            if(strcmp(line,"bdecompress") == 0){
+                j = 1;
+            }
+            if(strcmp(line,"decrypt")     == 0){
+                j = 2;
+            }
+            if(strcmp(line,"encrypt")     == 0){
+                j = 3;
+            }
+            if(strcmp(line,"gcompress")   == 0){
+                j = 4;
+            }
+            if(strcmp(line,"gdecompress") == 0){
+                j = 5;
+            }
+            if(strcmp(line,"nop")         == 0){
+                j = 6;
+            }
+            i = 0;
+
+        }
+        if(c == '\n'){
+            line[i++] = '\0';
+            transConfig[j] = atoi(line);
+            i = 0;
+        }
+        else{
+            line[i++] = c;
         }
     }
     //Como no fim do ficheiro não temos um \n presente então temos que repetir o código no final do ciclo
-    line[i++]='\0';
-    transConfig[j]=atoi(line);
-    i=0;
+    line[i++] = '\0';
+    transConfig[j] = atoi(line);
+    i = 0;
 }
 
 /*
@@ -205,8 +223,8 @@ void setTransConfig(char *configFile, int *transConfig){
 */
 int verificaPedido (int *transConfig, int transNecess[]){ 
 
-    for(int i=0;i<7;i++){
-        if(transNecess[i]>transConfig[i]){
+    for(int i = 0; i < 7; i++){
+        if(transNecess[i] > transConfig[i]){
             return 0;
         }
     }   
@@ -214,9 +232,10 @@ int verificaPedido (int *transConfig, int transNecess[]){
 }
 
 int main(int argc, char *argv[]){
-    int n,tampedido,f1;
+    int n, tampedido, f1;
 
-    f1 = open("clients-to-server", O_RDONLY | O_NONBLOCK);//Abre o fifo que recebe informação do servidor (criado pelo servidor)
+    //Abre o fifo que recebe informação do servidor (criado pelo servidor)
+    f1 = open("clients-to-server", O_RDONLY | O_NONBLOCK);
     if(f1 == -1) {
         printf("%s\n", strerror(errno));
         return 2;
@@ -224,14 +243,16 @@ int main(int argc, char *argv[]){
 
     int *transConfig;
     transConfig = malloc(7 * sizeof(int));
-    //Este array de inteiros vai conter o número máximo de cada transformação de acordo com o primeiro argumento do servidor
+    //Este array de inteiros vai conter o número máximo de cada transformação 
+    //de acordo com o primeiro argumento do servidor
     setTransConfig(argv[1],transConfig);
 
     PedidosEmEspera esp = initEmEspera();
     PedidosEmExecucao pexec = initEmExecucao();
     char command[300];
 
-    while(1){//Ciclo que executa os pedidos enviados pelo cliente
+    while(1){
+        //Ciclo que executa os pedidos enviados pelo cliente
         //Vamos ter que criar 2 fifos por cada pedido, um que recebe dados e outro que envia
 
         n = read(f1,command,sizeof(command));
@@ -239,7 +260,7 @@ int main(int argc, char *argv[]){
             printf("Recebi pedido\n");
             read(f1,&tampedido,sizeof(int));
 
-            for(int i=0;i<7;i++){
+            for(int i = 0; i < 7; i++){
                 printf("%d ", transConfig[i]);
             }
             printf("\n");
@@ -247,28 +268,38 @@ int main(int argc, char *argv[]){
             Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
             buildPedido(command,pe,tampedido,f1);
             printPedido(pe);
-            //Na struct pe vamos ter o tamanho do pedido, o pedido e o número de instâncias necessárias para cada transformação
+            //Na struct pe vamos ter o tamanho do pedido, o pedido e o 
+            //número de instâncias necessárias para cada transformação
 
-            if(strcmp(pe->pedido[0],"proc-file")==0){//Proc-file command
-
-                if(verificaPedido(transConfig,pe->transNecess)==0){//Comando em fila de espera
+            //Proc-file command
+            if(strcmp(pe->pedido[0],"proc-file")==0){
+                //Comando em fila de espera
+                if(verificaPedido(transConfig,pe->transNecess)==0){
                     printf("Para a fila de espera\n");
                     colocaEmEspera(pe,&esp);
-                }else{//Comando vai ser executado
+                }
+                //Comando vai ser executado
+                else{
                     printf("Vai executar\n");
                     pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);  
                     colocaEmExecucao(pe,&pexec,transConfig);
                 }
-            }else if(strcmp(pe->pedido[0],"status")==0){//Status command
+            //Status command
+            }
+            else if(strcmp(pe->pedido[0],"status")==0){
+                //FIXME 
                 //Por implementar
 
             }
 
-        }else if(n < 0){//O pipe está vazio (Não se recebeu nenhum comando)
-            //Se não recebermos num novo comando vamos verificar primeiro se algum pedido já acabou ou não
+        }
+        else if(n < 0){//O pipe está vazio (Não se recebeu nenhum comando)
+            //Se não recebermos num novo comando vamos verificar 
+            //primeiro se algum pedido já acabou ou não
             verificaPedidosConcluidos(&pexec,transConfig);
             retiraPedidosParaExecucao(&esp,pexec,transConfig,argv);
-            //Depois verificamos se podemos mandar executar pedido que estivessem na fila de espera   
+            //Depois verificamos se podemos mandar executar 
+            //pedido que estivessem na fila de espera   
         }
     }
     return 0;
