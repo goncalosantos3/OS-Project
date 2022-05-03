@@ -59,6 +59,7 @@ void enviaInfoServerStatus(char *fifo_name, int f1){
 }
 
 int recebeInfoServer(char info[], char *fifo_name){//Por desenvolver
+    int n;
 
     int f2 = open(fifo_name, O_RDONLY);
     if(f2 == -1){
@@ -66,42 +67,25 @@ int recebeInfoServer(char info[], char *fifo_name){//Por desenvolver
         return 4;
     }
 
-    int n = read(f2, info, 100 * sizeof(char));
-    //Recebe a informação do servidor sobre o estado o pedido (Em espera ou a ser processado) 
-    info[n] = '\n';
-    if(strcmp(info,"Pedido a ser processado\n") == 0){
-        write(1, info, n * sizeof(char));
-        //Escreve: "Pedido a ser processado"
-        n = read(f2, info, 100 * sizeof(char));
-        info[n] = '\n';
-        //Escreve: "Pedido concluido"
-        write(1, info, n*sizeof(char));
-    }else if (strcmp(info, "Pedido em fila de espera\n") == 0){
-        //Escreve: "Pedido em fila de espera"
-        write(1, info, n * sizeof(char));
-        n = read(f2, info, 100 * sizeof(char));
-        info[n] = '\n';
-        //Escreve: "Pedido a ser processado"
-        write(1, info, n * sizeof(char));
-        n = read(f2, info, 100 * sizeof(char));
-        info[n] = '\n';
-        //Escreve: "Pedido concluido"
+    while((n = read(f2,info, 100 * sizeof(char)))>0){
         write(1, info, n * sizeof(char));
     }
     return f2;
 }
 
 int recebeInfoServerStatus(char *info, char *fifo_name){
-    int n;
+    int n,task=0; char str[30];
     int f2 = open(fifo_name, O_RDONLY);
     if(f2 == -1){
         printf("%s\n", strerror(errno));
         return 4;
     }
 
-    while((n=read(f2,info,sizeof(info))>0) && strcmp(info,"Terminou")!=0){
-        info[n]='\n';
+    while((n = read(f2,info,sizeof(info))>0)){
+        sprintf(str,"task %d: ", task);
+        write(1,str,sizeof(str));
         write(1,info,n * sizeof(char));
+        task++;
     }
     return f2;
 }
@@ -111,17 +95,6 @@ int main(int argc, char *argv[]){
     char fifo_name[30];
     char string[20];
     int f1,f2,p;
-    
-    int p = mkfifo("clients-to-server",0777);
-    if(p == -1){
-        perror("ERROR");
-        ////Quando o erro não é o erro de o fifo já existir
-        //if(errno != EEXIST){
-        //    printf("Erro ao construir fifo\n");
-        //    perror("erro");
-        //    return 2;
-        //}
-    }
 
     //O cliente, por agora, apenas vai escrever no fifo
     f1 = open("clients-to-server", O_WRONLY);

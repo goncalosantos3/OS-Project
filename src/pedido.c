@@ -49,7 +49,6 @@ void buildPedido(char *command, Pedido pe, int tampedido, int f1){
     if(pe->fifo_ouput==-1){
         printf("%s\n", strerror(errno));
     }
-
     pe->tampedido=tampedido;
     pe->pid=0;//Enquanto que o pedido não é executado o pid é 0
 }

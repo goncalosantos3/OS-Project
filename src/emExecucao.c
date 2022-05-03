@@ -27,7 +27,7 @@ int isEmptyEmExecucao(PedidosEmExecucao pexec){
 void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int *transConfig, char *argv[]){
     write(pe->fifo_ouput,"Pedido a ser processado\n", 25 * sizeof(char));
 
-    executeProcFileCommand(argv,pe->pedido,pe->tampedido);
+    pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);
     PedidosEmExecucao novo = malloc(sizeof(struct pedidosEmExecucao));
     novo->atual = pe;
     novo->prox = (*pexec);
@@ -51,6 +51,7 @@ void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int *transConfig){
             for(int i=0;i<7;i++){
                 transConfig[i] += (*pexec)->atual->transNecess[i];
             }
+            close((*pexec)->atual->fifo_ouput);
             //Ele não está a somar aqui não sei porque
             (*pexec)=(*pexec)->prox;//Retira o pedido que concluiu a sua execução da lista ligada
         }else{

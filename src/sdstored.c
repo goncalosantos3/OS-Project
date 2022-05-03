@@ -231,29 +231,32 @@ int verificaPedido (int *transConfig, int transNecess[]){
     return 1;
 }
 
+//O status está com uns problemas estranhos
 void statusServer(Pedido pe, PedidosEmExecucao pexec){
     PedidosEmExecucao aux = pexec;
-    int task=0,tam; char string[300];
+    int tam; char string[300];
 
     while(aux!=NULL){
         tam=aux->atual->tampedido;
-        sprintf(string,"task #%d: ", task);
         for(int i=0; i<tam; i++){
-            strcat(string,aux->atual->pedido[i]);
+            if(i==0){
+                strcpy(string,aux->atual->pedido[i]);
+            }else{
+                strcat(string,aux->atual->pedido[i]);
+            }
+            strcat(string," ");
         }
-        strcat(string,"\n");
-        write(pe->fifo_ouput,string,sizeof(string));
-        task++;
+        strcat(string,"\0");
+        printf("%s\n", string);
+        write(pe->fifo_ouput,string,sizeof(string) + 1);
+        aux=aux->prox;
     }
-    write(pe->fifo_ouput,"Terminou", 9 * sizeof(char));
+    close(pe->fifo_ouput);
 }
 
 int main(int argc, char *argv[]){
     int p, n, tampedido, f1;
 
-
-    //Abre o fifo que recebe informação do servidor (criado pelo servidor)
-    f1 = open("clients-to-server", O_RDONLY | O_NONBLOCK);
     p  = mkfifo("clients-to-server",0777);
     if(p == -1){
         perror("Error");
@@ -263,6 +266,7 @@ int main(int argc, char *argv[]){
         //}
     }
 
+    f1 = open("clients-to-server", O_RDONLY | O_NONBLOCK);
     if(f1 == -1) {
         printf("%s\n", strerror(errno));
         return 2;
@@ -287,14 +291,14 @@ int main(int argc, char *argv[]){
             printf("Recebi pedido\n");
             read(f1,&tampedido,sizeof(int));
 
-            for(int i = 0; i < 7; i++){
-                printf("%d ", transConfig[i]);
-            }
-            printf("\n");
+            //for(int i = 0; i < 7; i++){
+            //    printf("%d ", transConfig[i]);
+            //}
+            //printf("\n");
 
             Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
             buildPedido(command,pe,tampedido,f1);
-            printPedido(pe);
+            //printPedido(pe);
             //Na struct pe vamos ter o tamanho do pedido, o pedido e o 
             //número de instâncias necessárias para cada transformação
 
@@ -308,8 +312,9 @@ int main(int argc, char *argv[]){
                 //Comando vai ser executado
                 else{
                     printf("Vai executar\n");
-                    pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);  
                     colocaEmExecucao(pe,&pexec,transConfig,argv);
+                    //Dentro desta função o pedido é colocado na lista ligada dos pedidos 
+                    //em execução e o pedido é executado
                 }
 
             }
@@ -318,14 +323,12 @@ int main(int argc, char *argv[]){
                 printf("Status\n");
                 statusServer(pe,pexec);
             }
-
         }
         else if(n < 0){
             //O pipe está vazio (Não se recebeu nenhum comando)
             //Se não recebermos num novo comando vamos verificar 
             //primeiro se algum pedido já acabou ou não
             verificaPedidosConcluidos(&pexec,transConfig);
-
             retiraPedidosParaExecucao(&esp,&pexec,transConfig,argv);
             //Depois verificamos se podemos mandar executar pedido que estivessem na fila de espera   
         }
