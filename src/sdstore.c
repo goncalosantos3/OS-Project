@@ -51,7 +51,20 @@ void enviaInfoServer(int tampedido, char *argv[], char *fifo_name ,int f1){
     write(f1, fifo_name, 30 * sizeof(char));
 }
 
-void recebeInfoServer(char info[], int f2){//Por desenvolver
+void enviaInfoServerStatus(char *fifo_name, int f1){
+    int tampedido=1;
+    write(f1,"status", 7 * sizeof(char));
+    write(f1,&tampedido,sizeof(int));
+    write(f1,fifo_name,30 * sizeof(char));
+}
+
+int recebeInfoServer(char info[], char *fifo_name){//Por desenvolver
+
+    int f2 = open(fifo_name, O_RDONLY);
+    if(f2 == -1){
+        printf("%s\n", strerror(errno));
+        return 4;
+    }
 
     int n = read(f2, info, 100 * sizeof(char));
     //Recebe a informação do servidor sobre o estado o pedido (Em espera ou a ser processado) 
@@ -75,14 +88,29 @@ void recebeInfoServer(char info[], int f2){//Por desenvolver
         //Escreve: "Pedido concluido"
         write(1, info, n * sizeof(char));
     }
+    return f2;
+}
 
+int recebeInfoServerStatus(char *info, char *fifo_name){
+    int n;
+    int f2 = open(fifo_name, O_RDONLY);
+    if(f2 == -1){
+        printf("%s\n", strerror(errno));
+        return 4;
+    }
+
+    while((n=read(f2,info,sizeof(info))>0) && strcmp(info,"Terminou")!=0){
+        info[n]='\n';
+        write(1,info,n * sizeof(char));
+    }
+    return f2;
 }
 
 int main(int argc, char *argv[]){
     int tampedido = argc-1;   
     char fifo_name[30];
     char string[20];
-    int f1,f2;
+    int f1,f2,p;
     
     int p = mkfifo("clients-to-server",0777);
     if(p == -1){
@@ -121,17 +149,14 @@ int main(int argc, char *argv[]){
         enviaInfoServer(tampedido, argv, fifo_name, f1);
 
         char info[100];
-        f2 = open(fifo_name, O_RDONLY);
-        if(f2 == -1){
-            printf("%s\n", strerror(errno));
-            return 4;
-        }
-        recebeInfoServer(info,f2);
+        f2 = recebeInfoServer(info,fifo_name);
 
-    }else if(strcmp(argv[1],"status") == 0){//./sdstore status
-        
-        write(f1,"status", 7 * sizeof(char));
-        
+    //}else if(strcmp(argv[1],"status") == 0){//./sdstore status
+    //    write(f1,"status", 7 * sizeof(char));
+    }else if(strcmp(argv[1],"status")==0){//./sdstore status
+        enviaInfoServerStatus(fifo_name,f1);
+        char info[100];
+        f2 = recebeInfoServerStatus(info,fifo_name);
     }
     close(f1);
     close(f2);

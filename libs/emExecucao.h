@@ -9,7 +9,7 @@ typedef struct pedidosEmExecucao{
 
 PedidosEmExecucao initEmExecucao();
 int isEmptyEmExecucao(PedidosEmExecucao pexec);
-void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int *transConfig);
+void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int *transConfig, char *argv[]);
 void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int *transConfig);
 
 #endif
