@@ -254,6 +254,18 @@ void statusServer(Pedido pe, PedidosEmExecucao pexec){
     close(pe->fifo_ouput);
 }
 
+int getTamanhoFicheiro(char *path){
+    int n,tam=0;
+    char buf[1024];
+
+    int f = open(path, O_RDONLY);
+
+    while((n=read(f,buf,sizeof(buf)))>0){
+        tam += n;
+    }
+    return tam;
+}
+
 int main(int argc, char *argv[]){
     int p, n, tampedido, f1;
 
