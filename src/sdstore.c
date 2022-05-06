@@ -82,8 +82,8 @@ int recebeInfoServerStatus(char *info, char *fifo_name){
         return 4;
     }
 
-    while((n = read(f2,info,sizeof(info))>0)){
-        write(1,info,n * sizeof(char));
+    while((n = read(f2,info,300 * sizeof(char))>0)){
+        write(1,info,sizeof(info));
     }
     return f2;
 }
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]){
     //    write(f1,"status", 7 * sizeof(char));
     }else if(strcmp(argv[1],"status")==0){//./sdstore status
         enviaInfoServerStatus(fifo_name,f1);
-        char info[100];
+        char info[300];
         f2 = recebeInfoServerStatus(info,fifo_name);
     }
     close(f1);

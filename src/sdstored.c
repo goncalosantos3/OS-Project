@@ -234,18 +234,17 @@ int verificaPedido (int *transConfig, int transNecess[]){
 //O status está com uns problemas estranhos
 void statusServer(Pedido pe, PedidosEmExecucao pexec){
     PedidosEmExecucao aux = pexec;
-    int tam; char string[300];
+    int tam; char string[300],*str;
 
     while(aux!=NULL){
-        sprintf(string, "task #%d: ", pexec->atual->nrPedido);
+        sprintf(string, "task #%d: ", aux->atual->nrPedido);
         tam=aux->atual->tampedido;
         for(int i=0; i<tam; i++){
-            strcat(string,aux->atual->pedido[i]);
-            strcat(string," ");
+            str = strcat(string,aux->atual->pedido[i]);
+            str = strcat(string," ");
         }
-        strcat(string,"\0");
-        printf("%s\n", string);
-        write(pe->fifo_ouput, string, strlen(string) * sizeof(char));
+        //printf("%s\n", str);
+        write(pe->fifo_ouput, str, strlen(str)+1);
         aux=aux->prox;
     }
     close(pe->fifo_ouput);
