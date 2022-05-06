@@ -75,7 +75,7 @@ int recebeInfoServer(char info[], char *fifo_name){//Por desenvolver
 }
 
 int recebeInfoServerStatus(char *info, char *fifo_name){
-    int n,task=0; char str[30];
+    int n;
     int f2 = open(fifo_name, O_RDONLY);
     if(f2 == -1){
         printf("%s\n", strerror(errno));
@@ -83,10 +83,7 @@ int recebeInfoServerStatus(char *info, char *fifo_name){
     }
 
     while((n = read(f2,info,sizeof(info))>0)){
-        sprintf(str,"task %d: ", task);
-        write(1,str,sizeof(str));
         write(1,info,n * sizeof(char));
-        task++;
     }
     return f2;
 }

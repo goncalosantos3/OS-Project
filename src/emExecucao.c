@@ -27,15 +27,20 @@ int isEmptyEmExecucao(PedidosEmExecucao pexec){
 void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int *transConfig, char *argv[]){
     write(pe->fifo_ouput,"Pedido a ser processado\n", 25 * sizeof(char));
 
+    //Coloca o comando a executar
     pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);
+
     PedidosEmExecucao novo = malloc(sizeof(struct pedidosEmExecucao));
     novo->atual = pe;
+    while((*pexec)!=NULL && (*pexec)->atual->prioridade > pe->prioridade){
+        pexec = &(*pexec)->prox;
+    }
     novo->prox = (*pexec);
+    (*pexec) = novo;
     //Ao por em execução um novo pedido temos que reduzir o número de instâncias disponiveis de cada transformaçao
     for(int i=0;i<7;i++){
         transConfig[i] -= pe->transNecess[i];
     }
-    (*pexec) = novo;
 }
 
 
@@ -43,6 +48,7 @@ void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int *transConfig, cha
 
 void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int *transConfig){
     //Atravessa a lista ligada e verifica quais os pedidos que terminaram e quais não terminaram
+    PedidosEmExecucao aux;
 
     while((*pexec)!=NULL){
         if(waitpid((*pexec)->atual->pid,NULL,WNOHANG)!=0){//O pedido já acabou
@@ -62,8 +68,11 @@ void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int *transConfig){
                 transConfig[i] += (*pexec)->atual->transNecess[i];
             }
             close((*pexec)->atual->fifo_ouput);
-            //Ele não está a somar aqui não sei porque
-            (*pexec)=(*pexec)->prox;//Retira o pedido que concluiu a sua execução da lista ligada
+            aux=(*pexec);
+            (*pexec)=(*pexec)->prox;
+            //Retira o pedido que concluiu a sua execução da lista ligada
+            free(aux);
+            //Liberta a memória associada a esse pedido;
         }else{
             pexec=&(*pexec)->prox;
         }
@@ -74,7 +83,7 @@ void printListaLigadaEmExecucao(PedidosEmExecucao pexec){
     PedidosEmExecucao aux = pexec;
 
     while(aux!=NULL){
-        printPedido(aux->atual);
+        printf("%d ", aux->atual->prioridade);
         aux=aux->prox;
     }
 }

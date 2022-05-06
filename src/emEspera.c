@@ -26,10 +26,13 @@ int isEmptyEmEspera(PedidosEmEspera esp){
 void colocaEmEspera(Pedido pe, PedidosEmEspera *esp){
     write(pe->fifo_ouput,"Pedido em fila de espera\n", 26 * sizeof(char));
 
-    PedidosEmEspera aux = malloc(sizeof(struct emEspera));
-    aux->atual=pe;
-    aux->prox=(*esp);
-    (*esp)=aux;
+    PedidosEmEspera novo = malloc(sizeof(struct emEspera));
+    novo->atual=pe;
+    while((*esp)!=NULL && (*esp)->atual->prioridade > pe->prioridade){
+        esp = &(*esp)->prox;
+    }
+    novo->prox = (*esp);
+    (*esp) = novo;
 }
 
 //Função que atravessa a lista ligada dos pedidos que estão em espera e retira os pedidos 
@@ -44,4 +47,14 @@ void retiraPedidosParaExecucao(PedidosEmEspera *esp, PedidosEmExecucao *pexec, i
             esp=&(*esp)->prox;
         }
     }
+}
+
+void printListaLigadaEmEspera(PedidosEmEspera esp){
+    PedidosEmEspera aux = esp;
+
+    while(aux!=NULL){
+        printf("%d ", aux->atual->prioridade);
+        aux=aux->prox;
+    }
+    printf("\n");
 }

@@ -16,7 +16,7 @@
 *   - ficheiros input e output
 *   - e finalmente todas as transformações a executar 
 */
-void buildPedido(char *command, Pedido pe, int tampedido, int f1){
+void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, int f1){
     char *str1, *str2;
     int i=0;
     char fifo_name[30];
@@ -53,6 +53,7 @@ void buildPedido(char *command, Pedido pe, int tampedido, int f1){
     if(pe->fifo_ouput==-1){
         printf("%s\n", strerror(errno));
     }
+    pe->nrPedido=nrpedido;
     pe->tampedido=tampedido;
     pe->pid=0;//Enquanto que o pedido não é executado o pid é 0
 }
@@ -70,4 +71,5 @@ void printPedido(Pedido pe){
     }
     printf("\n");
     printf("Prioridade-> %d\n", pe->prioridade);
+    printf("NrPedido-> %d\n", pe->nrPedido);
 }

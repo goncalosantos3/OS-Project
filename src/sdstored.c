@@ -237,25 +237,23 @@ void statusServer(Pedido pe, PedidosEmExecucao pexec){
     int tam; char string[300];
 
     while(aux!=NULL){
+        sprintf(string, "task #%d: ", pexec->atual->nrPedido);
         tam=aux->atual->tampedido;
         for(int i=0; i<tam; i++){
-            if(i==0){
-                strcpy(string,aux->atual->pedido[i]);
-            }else{
-                strcat(string,aux->atual->pedido[i]);
-            }
+            strcat(string,aux->atual->pedido[i]);
             strcat(string," ");
         }
         strcat(string,"\0");
         printf("%s\n", string);
-        write(pe->fifo_ouput,string,sizeof(string) + 1);
+        write(pe->fifo_ouput, string, strlen(string) * sizeof(char));
         aux=aux->prox;
     }
     close(pe->fifo_ouput);
+    free(pe);
 }
 
 int main(int argc, char *argv[]){
-    int p, n, tampedido, f1;
+    int p, n, tampedido, f1, nrpedido=0;
 
     p  = mkfifo("clients-to-server",0777);
     if(p == -1){
@@ -291,18 +289,13 @@ int main(int argc, char *argv[]){
             printf("Recebi pedido\n");
             read(f1,&tampedido,sizeof(int));
 
-            //for(int i = 0; i < 7; i++){
-            //    printf("%d ", transConfig[i]);
-            //}
-            //printf("\n");
-
             Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
-            buildPedido(command,pe,tampedido,f1);
+            buildPedido(command,pe,tampedido, nrpedido, f1);
+            nrpedido++;
             printPedido(pe);
             //Na struct pe vamos ter o tamanho do pedido, o pedido e o 
             //número de instâncias necessárias para cada transformação
-            /*
-            //Proc-file command
+
             if(strcmp(pe->pedido[0],"proc-file")==0){
                 //Comando em fila de espera
                 if(verificaPedido(transConfig,pe->transNecess)==0){
@@ -323,7 +316,6 @@ int main(int argc, char *argv[]){
                 printf("Status\n");
                 statusServer(pe,pexec);
             }
-            */
         }
         else if(n < 0){
             //O pipe está vazio (Não se recebeu nenhum comando)
