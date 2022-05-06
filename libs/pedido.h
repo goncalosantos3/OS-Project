@@ -2,8 +2,7 @@
 #define PEDIDO_H
 
 typedef struct pedido{
-    int nrBytesLidos;   //Implementa a primeira funcionalidade avançada
-    int nrBytesEscritos;//Implementa a primeira funcionalidade avançada
+    int prioridade;
     int fifo_ouput;    //File Descriptor do fifo que envia informação para o client
     int tampedido;
     int pid;

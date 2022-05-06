@@ -254,18 +254,6 @@ void statusServer(Pedido pe, PedidosEmExecucao pexec){
     close(pe->fifo_ouput);
 }
 
-int getTamanhoFicheiro(char *path){
-    int n,tam=0;
-    char buf[1024];
-
-    int f = open(path, O_RDONLY);
-
-    while((n=read(f,buf,sizeof(buf)))>0){
-        tam += n;
-    }
-    return tam;
-}
-
 int main(int argc, char *argv[]){
     int p, n, tampedido, f1;
 
@@ -310,10 +298,10 @@ int main(int argc, char *argv[]){
 
             Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
             buildPedido(command,pe,tampedido,f1);
-            //printPedido(pe);
+            printPedido(pe);
             //Na struct pe vamos ter o tamanho do pedido, o pedido e o 
             //número de instâncias necessárias para cada transformação
-
+            /*
             //Proc-file command
             if(strcmp(pe->pedido[0],"proc-file")==0){
                 //Comando em fila de espera
@@ -335,6 +323,7 @@ int main(int argc, char *argv[]){
                 printf("Status\n");
                 statusServer(pe,pexec);
             }
+            */
         }
         else if(n < 0){
             //O pipe está vazio (Não se recebeu nenhum comando)

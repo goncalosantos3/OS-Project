@@ -47,6 +47,16 @@ void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int *transConfig){
     while((*pexec)!=NULL){
         if(waitpid((*pexec)->atual->pid,NULL,WNOHANG)!=0){//O pedido já acabou
             write((*pexec)->atual->fifo_ouput,"Pedido concluído\n", 18 * sizeof(char));
+            //Envia o número de bytes input para o cliente (Funcionalidade avançada)
+            if(fork()==0){
+                dup2((*pexec)->atual->fifo_ouput,1);
+                execlp("wc","wc","-c",(*pexec)->atual->pedido[1],NULL);
+            }
+            //Envia o número de bytes output para o cliente (Funcionalidade avançada)
+            if(fork()==0){
+                dup2((*pexec)->atual->fifo_ouput,1);
+                execlp("wc","wc","-c",(*pexec)->atual->pedido[2],NULL);
+            }
             //Como o pedido terminou a sua execução vamos aumentar o número de instâncias disponíveis de cada transformação
             for(int i=0;i<7;i++){
                 transConfig[i] += (*pexec)->atual->transNecess[i];

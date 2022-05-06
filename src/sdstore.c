@@ -28,17 +28,17 @@
 *   recebe informação enviada pelo servidor.
 */
 
-void enviaInfoServer(int tampedido, char *argv[], char *fifo_name ,int f1){        
+void enviaInfoServer(int tampedido, int argc, char *argv[], char *fifo_name ,int f1){        
     char command[300];
 
-    for(int j = 0; j < tampedido; j++){
+    for(int j = 0; j < argc-1; j++){
 
         if(j == 0){
             strcpy(command, argv[1]);
         }else{
             strcat(command, argv[j+1]);
         }
-        if(j != tampedido-1){
+        if(j != argc-2){
             strcat(command," ");
         }
     }
@@ -48,6 +48,7 @@ void enviaInfoServer(int tampedido, char *argv[], char *fifo_name ,int f1){
     write(f1, &tampedido, sizeof(int));
     //Manda para o servidor o número de argumentos no comando input
     printf("%s\n", fifo_name);
+    //Manda para o servidor o nome do fifo pelo qual o servidor deve responder ao cliente
     write(f1, fifo_name, 30 * sizeof(char));
 }
 
@@ -119,7 +120,11 @@ int main(int argc, char *argv[]){
 
     if(strcmp(argv[1], "proc-file") == 0){//./sdstore proc-file input_file output_file bcompress ...
         //Executa o primeiro pedido (recebido como argumento do programa)
-        enviaInfoServer(tampedido, argv, fifo_name, f1);
+        if(strcmp(argv[2],"-p")==0){
+            //As strings "-p" e o valor da prioridade não entram no array de strings
+            tampedido -= 2;
+        }
+        enviaInfoServer(tampedido, argc, argv, fifo_name, f1);
 
         char info[100];
         f2 = recebeInfoServer(info,fifo_name);

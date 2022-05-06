@@ -21,9 +21,9 @@ void buildPedido(char *command, Pedido pe, int tampedido, int f1){
     int i=0;
     char fifo_name[30];
 
+    pe->prioridade=0;//Valor por defeito (inicial)
     str1=strdup(command);
     while((str2=strsep(&str1," "))!=NULL){
-        pe->pedido[i]=str2;
         if(strcmp(str2,"bcompress")==0){
             pe->transNecess[0]++;
         }else if(strcmp(str2,"bdecompress")==0){
@@ -39,12 +39,16 @@ void buildPedido(char *command, Pedido pe, int tampedido, int f1){
         }else if(strcmp(str2,"nop")==0){
             pe->transNecess[6]++;
         }
-        i++;
+
+        if(strcmp(str2,"-p")==0){
+            str2=strsep(&str1," ");   //str2 == prioridade
+            pe->prioridade=atoi(str2);
+        }else{
+            pe->pedido[i++]=str2;
+        }
     }
-    printf("ola\n");
-    //Recebe o cliente o nome do fifo para enviar informação e abre o fifo
+    //Recebe o cliente o nome do fifo para enviar itampedido
     read(f1,fifo_name,sizeof(fifo_name));
-    printf("Nome do fifo -> %s\n", fifo_name);
     pe->fifo_ouput = open(fifo_name, O_WRONLY);
     if(pe->fifo_ouput==-1){
         printf("%s\n", strerror(errno));
@@ -65,4 +69,5 @@ void printPedido(Pedido pe){
         printf("%s ", pe->pedido[i]);
     }
     printf("\n");
+    printf("Prioridade-> %d\n", pe->prioridade);
 }
