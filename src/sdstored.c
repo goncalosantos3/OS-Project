@@ -232,23 +232,46 @@ int verificaPedido (int *transConfig, int transNecess[]){
 }
 
 //O status está com uns problemas estranhos
-void statusServer(Pedido pe, PedidosEmExecucao pexec){
+void statusServer(Pedido pe, PedidosEmExecucao pexec, int *maxTrans, int *transConfig){
     PedidosEmExecucao aux = pexec;
-    int tam; char string[300],*str;
+    int tam; char string[300];
 
-    while(aux!=NULL){
+    while(aux!=NULL){//Manda ao cliente os pedidos que estão em execução
         sprintf(string, "task #%d: ", aux->atual->nrPedido);
         tam=aux->atual->tampedido;
         for(int i=0; i<tam; i++){
-            str = strcat(string,aux->atual->pedido[i]);
-            str = strcat(string," ");
+            strcat(string,aux->atual->pedido[i]);
+            if(i<tam-1){
+                strcat(string," ");
+            }else{
+                strcat(string, "\n");
+            }
         }
-        //printf("%s\n", str);
-        write(pe->fifo_ouput, str, strlen(str)+1);
+        string[strlen(string)] = '\0';
+        tam = strlen(string)+1;
+        write(pe->fifo_ouput, &tam, sizeof(int));
+        write(pe->fifo_ouput, string, strlen(string) + 1);
         aux=aux->prox;
+    } 
+
+    for(int i=0;i<7;i++){//Manda ao cliente o estado de todas as transformações
+        char *trans[7]={"bcompress","bdecompress","decrypt","encrypt","gcompress","gdecompress","nop"};
+
+        sprintf(string, "transf %s: %d/%d (running/max)\n", trans[i], maxTrans[i]-transConfig[i], maxTrans[i]);
+        string[strlen(string)]='\0';
+        tam = strlen(string)+1;
+        write(pe->fifo_ouput, &tam, sizeof(int));
+        write(pe->fifo_ouput, string, strlen(string)+1);
     }
     close(pe->fifo_ouput);
     free(pe);
+}
+
+void copiaArray(int *maxTrans, int *transConfig, int n){
+
+    for(int i=0;i<n;i++){
+        maxTrans[i] = transConfig[i];
+    }
 }
 
 int main(int argc, char *argv[]){
@@ -269,11 +292,13 @@ int main(int argc, char *argv[]){
         return 2;
     }
 
-    int *transConfig;
+    int *transConfig, *maxTrans;
     transConfig = malloc(7 * sizeof(int));
+    maxTrans = malloc(7 * sizeof(int));
     //Este array de inteiros vai conter o número máximo de cada transformação 
     //de acordo com o primeiro argumento do servidor
     setTransConfig(argv[1],transConfig);
+    copiaArray(maxTrans,transConfig,7);
 
     PedidosEmEspera esp = initEmEspera();
     PedidosEmExecucao pexec = initEmExecucao();
@@ -291,7 +316,6 @@ int main(int argc, char *argv[]){
             Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
             buildPedido(command,pe,tampedido, nrpedido, f1);
             nrpedido++;
-            printPedido(pe);
             //Na struct pe vamos ter o tamanho do pedido, o pedido e o 
             //número de instâncias necessárias para cada transformação
 
@@ -313,7 +337,7 @@ int main(int argc, char *argv[]){
             //Status command
             else if(strcmp(pe->pedido[0],"status")==0){
                 printf("Status\n");
-                statusServer(pe,pexec);
+                statusServer(pe,pexec,maxTrans,transConfig);
             }
         }
         else if(n < 0){

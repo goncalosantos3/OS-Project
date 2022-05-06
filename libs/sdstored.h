@@ -5,6 +5,6 @@
 int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs);
 void setTransConfig(char *configFile, int *transConfig);
 int verificaPedido (int *transConfig, int transNecess[]);
-void statusServer(Pedido pe, PedidosEmExecucao pexec);
-int getTamanhoFicheiro(char *path);
+void statusServer(Pedido pe, PedidosEmExecucao pexec, int *maxTrans, int *transConfig);
+void copiaArray(int *maxTrans, int *transConfig, int n);
 #endif
