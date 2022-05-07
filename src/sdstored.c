@@ -12,6 +12,8 @@
 #include "../libs/emExecucao.h"
 #include "../libs/pedido.h"
 
+volatile sig_atomic_t acabouExecucao = 0;
+
 /*
 *   O servidor tem como função receber as tarefas passadas pelo cliente e aplicar as 
 *   devidas transformações aos ficheiros para executar as várias transformações pretendidas.
@@ -274,8 +276,16 @@ void copiaArray(int *maxTrans, int *transConfig, int n){
     }
 }
 
+void paraExecucao(int signum){
+    acabouExecucao = 1;
+}
+
 int main(int argc, char *argv[]){
     int p, n, tampedido, f1, nrpedido=0;
+
+    //As próximas 4 linhas de código servem para implementar o termino gracioso do programa.
+    //Especificam o que o programa deve fazer ao receber o sinal SIGTERM. 
+    signal(SIGTERM, &paraExecucao);
 
     p  = mkfifo("clients-to-server",0777);
     if(p == -1){
@@ -304,12 +314,16 @@ int main(int argc, char *argv[]){
     PedidosEmExecucao pexec = initEmExecucao();
     char command[300];
 
-    while(1){
-        //Ciclo que executa os pedidos enviados pelo cliente
-        //Vamos ter que criar 2 fifos por cada pedido, um que recebe dados e outro que envia
+    while((acabouExecucao == 0) || 
+    (acabouExecucao == 1 && (isEmptyEmEspera(esp) == 0 || isEmptyEmExecucao(pexec) == 0))){
+        //Se a variável acabouExecucao for 0 o ciclo continua
+        //Se a variável acabouExecucao for 1 não aceitamos novos pedidos e quando a fila de espera
+        //e a fila de pedidos a executar estiverem vazias acaba a execução do programa
 
         n = read(f1,command,sizeof(command));
-        if(n > 0){//Recebemos um novo pedido
+        if(n > 0 && acabouExecucao == 0){
+            //Recebemos um novo pedido
+            //O acabouExecucao ter o valor 0 significa que o servidor ainda não recebeu o sinal SIGTERM
             printf("Recebi pedido\n");
             read(f1,&tampedido,sizeof(int));
 
@@ -339,7 +353,7 @@ int main(int argc, char *argv[]){
                 printf("Status\n");
                 statusServer(pe,pexec,maxTrans,transConfig);
             }
-        }
+        }  
         else if(n < 0){
             //O pipe está vazio (Não se recebeu nenhum comando)
             //Se não recebermos num novo comando vamos verificar 
@@ -347,6 +361,16 @@ int main(int argc, char *argv[]){
             verificaPedidosConcluidos(&pexec,transConfig);
             retiraPedidosParaExecucao(&esp,&pexec,transConfig,argv);
             //Depois verificamos se podemos mandar executar pedido que estivessem na fila de espera   
+        
+        }else if( n > 0 && acabouExecucao == 1){
+            //O servidor já recebeu o sinal SIGTERM e então novos comandos são rejeitados
+            read(f1,&tampedido,sizeof(int));
+            Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
+            buildPedido(command,pe,tampedido, nrpedido, f1);
+            nrpedido++;
+            write(pe->fifo_ouput, "Pedido rejeitado\n", 18 * sizeof(char));
+            close(pe->fifo_ouput);
+            free(pe);
         }
     }
     return 0;

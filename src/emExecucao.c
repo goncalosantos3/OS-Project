@@ -17,7 +17,7 @@ PedidosEmExecucao initEmExecucao(){
 
 int isEmptyEmExecucao(PedidosEmExecucao pexec){
 
-    if((pexec->atual == NULL && pexec->prox==NULL) || pexec==NULL){
+    if((pexec==NULL) || (pexec->atual == NULL && pexec->prox==NULL)){
         return 1;
     }
     return 0;

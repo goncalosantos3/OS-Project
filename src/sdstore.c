@@ -59,7 +59,7 @@ void enviaInfoServerStatus(char *fifo_name, int f1){
     write(f1,fifo_name,30 * sizeof(char));
 }
 
-int recebeInfoServer(char info[], char *fifo_name){//Por desenvolver
+int recebeInfoServer(char info[], char *fifo_name){
     int n;
 
     int f2 = open(fifo_name, O_RDONLY);

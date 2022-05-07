@@ -17,7 +17,7 @@ PedidosEmEspera initEmEspera(){
 
 int isEmptyEmEspera(PedidosEmEspera esp){
 
-    if((esp->atual == NULL && esp->prox==NULL) || (esp==NULL)){
+    if((esp==NULL) || (esp->atual == NULL && esp->prox==NULL)){
         return 1;
     }
     return 0;
