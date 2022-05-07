@@ -1,5 +1,5 @@
-#ifndef FILAESPERA_H
-#define FILAESPERA_H
+#ifndef EMESPERA_H
+#define EMESPERA_H
 
 #include "sdstored.h"
 
