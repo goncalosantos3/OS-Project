@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include "../libs/funcsAux.h"
 #include "../libs/emExecucao.h"
 #include "../libs/sdstored.h"
 
@@ -43,6 +44,38 @@ void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int *transConfig, cha
     }
 }
 
+void retiraPedidoConcluido(int pid, PedidosEmExecucao *pexec, int *transConfig){
+    PedidosEmExecucao aux;
+
+    while((*pexec) != NULL && (*pexec)->atual->pid != pid){
+        pexec = &(*pexec)->prox;
+    }
+
+    if((*pexec) != NULL){
+        write((*pexec)->atual->fifo_ouput,"Pedido concluído\n", 18 * sizeof(char));
+        close((*pexec)->atual->fifo_ouput);
+        //Envia o número de bytes input para o cliente (Funcionalidade avançada)
+        if(fork()==0){
+            dup2((*pexec)->atual->fifo_ouput,1);
+            execlp("wc","wc","-c",(*pexec)->atual->pedido[1],NULL);
+            exit(1);
+        }
+        //Envia o número de bytes output para o cliente (Funcionalidade avançada)
+        if(fork()==0){
+            dup2((*pexec)->atual->fifo_ouput,1);
+            execlp("wc","wc","-c",(*pexec)->atual->pedido[2],NULL);
+            exit(1);
+        }
+        for(int i=0;i<7;i++){
+            transConfig[i] += (*pexec)->atual->transNecess[i];
+        }
+        aux = (*pexec);
+        (*pexec)=(*pexec)->prox;
+        //Retira o pedido que concluiu a sua execução da lista ligada
+        free(aux);
+        //Liberta a memória associada a esse pedido;
+    }
+}
 
 //Definir função que verifica quais os pedidos em execucao que já concluiram a sua execucao
 
@@ -51,7 +84,7 @@ void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int *transConfig){
     PedidosEmExecucao aux;
 
     while((*pexec)!=NULL){
-        if(waitpid((*pexec)->atual->pid,NULL,WNOHANG)!=0){//O pedido já acabou
+        if(waitpid((*pexec)->atual->pid, NULL, WNOHANG) != 0){//O pedido já acabou
             write((*pexec)->atual->fifo_ouput,"Pedido concluído\n", 18 * sizeof(char));
             //Envia o número de bytes input para o cliente (Funcionalidade avançada)
             if(fork()==0){
