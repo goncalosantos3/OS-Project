@@ -29,6 +29,7 @@
 */
 
 void enviaInfoServer(int tampedido, int argc, char *argv[], char *fifo_name ,int f1){        
+    int n;
     char command[300];
 
     for(int j = 0; j < argc-1; j++){
@@ -43,20 +44,31 @@ void enviaInfoServer(int tampedido, int argc, char *argv[], char *fifo_name ,int
         }
     }
     printf("%s\n", command);
-    write(f1, command, sizeof(command));
+    command[strlen(command)] = '\0';
+    n = strlen(command) + 1;
+    write(f1, &n, sizeof(int));
+    write(f1, command, strlen(command) + 1);
 
     write(f1, &tampedido, sizeof(int));
     //Manda para o servidor o número de argumentos no comando input
     printf("%s\n", fifo_name);
     //Manda para o servidor o nome do fifo pelo qual o servidor deve responder ao cliente
-    write(f1, fifo_name, 30 * sizeof(char));
+    fifo_name[strlen(fifo_name)] = '\0';
+    n = strlen(fifo_name) + 1;
+    write(f1, &n, sizeof(int));
+    write(f1, fifo_name,  strlen(fifo_name) + 1);
 }
 
-void enviaInfoServerStatus(char *fifo_name, int f1){
-    int tampedido=1;
-    write(f1,"status", 7 * sizeof(char));
+void enviaInfoServerStatus(char *fifo_name, int f1, char *argv[]){
+    int tampedido=1, n;
+
+    n = strlen(argv[1]);
+    write(f1, &n, sizeof(int));
+    write(f1,argv[1], strlen(argv[1]) + 1);
     write(f1,&tampedido,sizeof(int));
-    write(f1,fifo_name,30 * sizeof(char));
+    n = strlen(fifo_name);
+    write(f1, &n, sizeof(int));
+    write(f1,fifo_name, strlen(fifo_name) + 1);
 }
 
 int recebeInfoServer(char info[], char *fifo_name){
@@ -108,12 +120,11 @@ int main(int argc, char *argv[]){
     //Cria o fifo que comunica entre o cliente e o servidor
     p = mkfifo(fifo_name, 0777);
     if(p == -1){
-        perror("ERROR");
-        ////Quando o erro não é o erro de o fifo já existir
-        //if(errno != EEXIST){
-        //    printf("Erro ao construir fifo\n");
-        //    return 2;
-        //}
+        //Quando o erro não é o erro de o fifo já existir
+        if(errno != EEXIST){
+            printf("Erro ao construir fifo\n");
+            return 2;
+        }
     }   
 
     if(strcmp(argv[1], "proc-file") == 0){//./sdstore proc-file input_file output_file bcompress ...
@@ -130,7 +141,7 @@ int main(int argc, char *argv[]){
     //}else if(strcmp(argv[1],"status") == 0){//./sdstore status
     //    write(f1,"status", 7 * sizeof(char));
     }else if(strcmp(argv[1],"status")==0){//./sdstore status
-        enviaInfoServerStatus(fifo_name,f1);
+        enviaInfoServerStatus(fifo_name,f1, argv);
 
         char info[300];
         f2 = recebeInfoServerStatus(info,fifo_name);

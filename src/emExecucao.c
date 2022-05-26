@@ -101,8 +101,8 @@ void verificaPedidosConcluidos(PedidosEmExecucao *pexec, int *transConfig){
                 transConfig[i] += (*pexec)->atual->transNecess[i];
             }
             close((*pexec)->atual->fifo_ouput);
-            aux=(*pexec);
-            (*pexec)=(*pexec)->prox;
+            aux = (*pexec);
+            (*pexec) = (*pexec)->prox;
             //Retira o pedido que concluiu a sua execução da lista ligada
             free(aux);
             //Liberta a memória associada a esse pedido;

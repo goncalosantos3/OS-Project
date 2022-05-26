@@ -38,13 +38,16 @@ void colocaEmEspera(Pedido pe, PedidosEmEspera *esp){
 //Função que atravessa a lista ligada dos pedidos que estão em espera e retira os pedidos 
 //que podem ir para execução inserindo-os na lista ligada de pedidos para execução
 void retiraPedidosParaExecucao(PedidosEmEspera *esp, PedidosEmExecucao *pexec, int *transConfig, char *argv[]){
+    PedidosEmEspera aux;
 
     while((*esp)!=NULL){
-        if(verificaPedido(transConfig,(*esp)->atual->transNecess)==1){
+        if(verificaPedido(transConfig,(*esp)->atual->transNecess) == 1){
             colocaEmExecucao((*esp)->atual,pexec,transConfig,argv);
-            (*esp)=(*esp)->prox;
+            aux = (*esp);
+            (*esp) = (*esp)->prox;
+            free(aux);
         }else{
-            esp=&(*esp)->prox;
+            esp = &(*esp)->prox;
         }
     }
 }

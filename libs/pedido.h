@@ -11,7 +11,7 @@ typedef struct pedido{
     char *pedido[];
 }*Pedido;
 
-void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, int f1);
+void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, char *fifo_name, int f1);
 void freePedido(Pedido pe);
 void printPedido(Pedido pe);
 

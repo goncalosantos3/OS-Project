@@ -16,10 +16,9 @@
 *   - ficheiros input e output
 *   - e finalmente todas as transformações a executar 
 */
-void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, int f1){
+void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, char *fifo_name, int f1){
     char *str1, *str2;
     int i=0;
-    char fifo_name[30];
 
     pe->prioridade=0;//Valor por defeito (inicial)
     str1=strdup(command);
@@ -48,7 +47,6 @@ void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, int f1){
         }
     }
     //Recebe o cliente o nome do fifo para enviar itampedido
-    read(f1,fifo_name,sizeof(fifo_name));
     pe->fifo_ouput = open(fifo_name, O_WRONLY);
     if(pe->fifo_ouput==-1){
         printf("%s\n", strerror(errno));
