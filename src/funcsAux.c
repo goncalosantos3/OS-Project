@@ -28,7 +28,7 @@
 *   - E finalmente todas as transformações a serem executadas para completar o pedido
 *   Recebe ainda o parametro nrargs que se trata do comprimento do array de strings transformacoes.
 */
-int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
+int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int ppid){
     char *path; 
     int nrpipes = nrargs-4;
     int pid;
@@ -146,6 +146,7 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs){
         //O processo associado ao pedido espera pelo processo associado à última transformação
         //Quando este terminar o pedido foi concluído
         waitpid(pid, NULL, 1);
+        kill(ppid, SIGUSR2);
         exit(0);
     }
     //Devolve o pid do processo associado ao pedido

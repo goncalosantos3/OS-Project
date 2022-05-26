@@ -75,7 +75,7 @@ int main(int argc, char *argv[]){
     //Especificam o que o programa deve fazer ao receber o sinal SIGTERM. 
     signal(SIGTERM, &paraExecucao);
     signal(SIGUSR1, &novoPedido);
-    signal(SIGCHLD, &pedidoConcluido);
+    signal(SIGUSR2, &pedidoConcluido);
     
     p  = mkfifo("clients-to-server",0777);
     if(p == -1){

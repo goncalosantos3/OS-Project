@@ -29,7 +29,7 @@ void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int *transConfig, cha
     write(pe->fifo_ouput,"Pedido a ser processado\n", 25 * sizeof(char));
 
     //Coloca o comando a executar
-    pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido);
+    pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido,getpid());
 
     PedidosEmExecucao novo = malloc(sizeof(struct pedidosEmExecucao));
     novo->atual = pe;
