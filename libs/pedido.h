@@ -7,12 +7,11 @@ typedef struct pedido{
     int fifo_ouput;    //File Descriptor do fifo que envia informação para o client
     int tampedido;
     int pid;
-    int fifo_server;
     int transNecess[7];
     char *pedido[];
 }*Pedido;
 
-void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, char *fifo_name, int f1);
+void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, char *fifo_name);
 void freePedido(Pedido pe);
 void printPedido(Pedido pe);
 

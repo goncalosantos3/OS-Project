@@ -67,7 +67,7 @@ void recebeNovosPedidos(int f, int *pipefd, char *command, int pid){
 }
 
 int main(int argc, char *argv[]){
-    int p, tampedido, f1, nrpedido=0, pid,n;
+    int p, tampedido, fifo_in, fifo_out, nrpedido=0, pid,n;
     char fifo_name[30];
     char command[300];
 
@@ -81,14 +81,20 @@ int main(int argc, char *argv[]){
     if(p == -1){
         if(errno != EEXIST){//Quando o erro não é o erro de o fifo já existir
             printf("Erro ao construir fifo\n");
-            return 2;
+            return 1;
         }
     }
 
-    f1 = open("clients-to-server", O_RDWR);
-    if(f1 == -1) {
+    fifo_in = open("clients-to-server", O_RDONLY);
+    if(fifo_in == -1) {
         printf("%s\n", strerror(errno));
         return 2;
+    }
+
+    fifo_out = open("clients-to-server", O_WRONLY);
+    if(fifo_out == -1) {
+        printf("%s\n", strerror(errno));
+        return 3;
     }
 
     int *transConfig, *maxTrans;
@@ -106,7 +112,7 @@ int main(int argc, char *argv[]){
     // e o processo principal do programa
     int pipe1[2];
     pipe(pipe1);
-    recebeNovosPedidos(f1,pipe1,command,getpid());
+    recebeNovosPedidos(fifo_in,pipe1,command,getpid());
 
     while((acabouExecucao == 0) || 
     (acabouExecucao == 1 && (isEmptyEmEspera(esp) == 0 || isEmptyEmExecucao(pexec) == 0))){
@@ -126,7 +132,7 @@ int main(int argc, char *argv[]){
             read(pipe1[0], fifo_name, n * sizeof(char));
 
             Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
-            buildPedido(command, pe, tampedido, nrpedido, fifo_name, f1);
+            buildPedido(command, pe, tampedido, nrpedido, fifo_name);
             if(strcmp(pe->pedido[0], "proc-file") == 0){
                 //Comando em fila de espera
                 if(verificaPedido(transConfig,pe->transNecess) == 0){
@@ -146,14 +152,15 @@ int main(int argc, char *argv[]){
             }
         }else if(sinal == 1){
             printf("Um pedido terminou a sua execução\n");
-            read(f1, &pid, sizeof(int));
+            read(fifo_in, &pid, sizeof(int));
             printf("Pid a remover-> %d\n", pid);
             retiraPedidoConcluido(pid, &pexec, transConfig);
             retiraPedidosParaExecucao(&esp, &pexec, transConfig, argv);
         }
     }
     close(pipe1[0]);
-    close(f1);
+    close(fifo_in);
+    close(fifo_out);
     return 0;
 }
 

@@ -16,7 +16,7 @@
 *   - ficheiros input e output
 *   - e finalmente todas as transformações a executar 
 */
-void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, char *fifo_name, int f1){
+void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, char *fifo_name){
     char *str1, *str2;
     int i=0;
 
@@ -48,13 +48,12 @@ void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, char *fi
     }
     //Recebe o cliente o nome do fifo para enviar itampedido
     pe->fifo_ouput = open(fifo_name, O_WRONLY);
-    if(pe->fifo_ouput==-1){
+    if(pe->fifo_ouput == -1){
         printf("%s\n", strerror(errno));
     }
     pe->nrPedido = nrpedido;
     pe->tampedido =tampedido;
-    pe->pid =0;//Enquanto que o pedido não é executado o pid é 0
-    pe->fifo_server = f1;
+    pe->pid = 0;//Enquanto que o pedido não é executado o pid é 0
 }
 
 //Esta função serve apenas para debug. Printa todos os parâmetros de um pedido

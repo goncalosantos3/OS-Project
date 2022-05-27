@@ -83,6 +83,7 @@ int recebeInfoServer(char info[], char *fifo_name){
     while((n = read(f2,info, 100 * sizeof(char)))>0){
         write(1, info, n * sizeof(char));
     }
+    printf("Acabei de ler\n");
     return f2;
 }
 
