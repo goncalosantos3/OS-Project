@@ -42,7 +42,7 @@ void retiraPedidosParaExecucao(PedidosEmEspera *esp, PedidosEmExecucao *pexec, i
 
     while((*esp)!=NULL){
         if(verificaPedido(transConfig,(*esp)->atual->transNecess) == 1){
-            colocaEmExecucao((*esp)->atual,pexec,transConfig,argv);
+            colocaEmExecucao((*esp)->atual, pexec, transConfig, argv);
             aux = (*esp);
             (*esp) = (*esp)->prox;
             free(aux);

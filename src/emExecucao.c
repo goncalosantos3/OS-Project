@@ -30,6 +30,7 @@ void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int *transConfig, cha
 
     //Coloca o comando a executar
     pe->pid = executeProcFileCommand(argv,pe,getpid());
+    printf("Tem que ser este pid: %d\n", pe->pid);
 
     PedidosEmExecucao novo = malloc(sizeof(struct pedidosEmExecucao));
     novo->atual = pe;
@@ -53,24 +54,24 @@ void retiraPedidoConcluido(int pid, PedidosEmExecucao *pexec, int *transConfig){
 
     if((*pexec) != NULL){
         write((*pexec)->atual->fifo_ouput,"Pedido concluído\n", 18 * sizeof(char));
-        close((*pexec)->atual->fifo_ouput);
         //Envia o número de bytes input para o cliente (Funcionalidade avançada)
         if(fork()==0){
             dup2((*pexec)->atual->fifo_ouput, 1);
-            execlp("wc","wc","-c",(*pexec)->atual->pedido[1],NULL);
+            execlp("wc","wc","-c", (*pexec)->atual->pedido[1], NULL);
             exit(1);
         }
         //Envia o número de bytes output para o cliente (Funcionalidade avançada)
         if(fork()==0){
             dup2((*pexec)->atual->fifo_ouput,1);
-            execlp("wc","wc","-c",(*pexec)->atual->pedido[2],NULL);
+            execlp("wc","wc","-c", (*pexec)->atual->pedido[2], NULL);
             exit(1);
         }
+        close((*pexec)->atual->fifo_ouput);
         for(int i=0;i<7;i++){
             transConfig[i] += (*pexec)->atual->transNecess[i];
         }
         aux = (*pexec);
-        (*pexec)=(*pexec)->prox;
+        (*pexec) = (*pexec)->prox;
         //Retira o pedido que concluiu a sua execução da lista ligada
         free(aux);
         //Liberta a memória associada a esse pedido;

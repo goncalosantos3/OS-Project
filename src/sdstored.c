@@ -127,7 +127,6 @@ int main(int argc, char *argv[]){
 
             Pedido pe = malloc(sizeof(struct pedido) + 2 * sizeof(int) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
             buildPedido(command, pe, tampedido, nrpedido, fifo_name, f1, pipe2);
-            printPedido(pe);
             if(strcmp(pe->pedido[0], "proc-file") == 0){
                 //Comando em fila de espera
                 if(verificaPedido(transConfig,pe->transNecess) == 0){
@@ -147,7 +146,7 @@ int main(int argc, char *argv[]){
             }
         }else if(sinal == 1){
             printf("Um pedido terminou a sua execução\n");
-            pid = wait(NULL);
+            pid = waitpid(-1, NULL, 0);
             //read(pipe2[0], &pid, sizeof(int));
             //close(pipe2[0]);
             printf("%d\n", pid);
@@ -156,6 +155,7 @@ int main(int argc, char *argv[]){
         }
     }
     close(pipe1[0]);
+    close(f1);
     return 0;
 }
 
