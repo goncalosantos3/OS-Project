@@ -137,9 +137,7 @@ int main(int argc, char *argv[]){
 
         char info[100];
         f2 = recebeInfoServer(info,fifo_name);
-
-    //}else if(strcmp(argv[1],"status") == 0){//./sdstore status
-    //    write(f1,"status", 7 * sizeof(char));
+        
     }else if(strcmp(argv[1],"status")==0){//./sdstore status
         enviaInfoServerStatus(fifo_name,f1, argv);
 

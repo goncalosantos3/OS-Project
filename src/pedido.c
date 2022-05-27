@@ -16,7 +16,7 @@
 *   - ficheiros input e output
 *   - e finalmente todas as transformações a executar 
 */
-void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, char *fifo_name, int f1, int *pipe){
+void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, char *fifo_name, int f1){
     char *str1, *str2;
     int i=0;
 
@@ -54,7 +54,7 @@ void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, char *fi
     pe->nrPedido = nrpedido;
     pe->tampedido =tampedido;
     pe->pid =0;//Enquanto que o pedido não é executado o pid é 0
-    pe->pipe = pipe;
+    pe->fifo_server = f1;
 }
 
 //Esta função serve apenas para debug. Printa todos os parâmetros de um pedido
@@ -71,5 +71,4 @@ void printPedido(Pedido pe){
     printf("\n");
     printf("Prioridade-> %d\n", pe->prioridade);
     printf("NrPedido-> %d\n", pe->nrPedido);
-    printf("Pipe-> %d %d\n", pe->pipe[0], pe->pipe[1]);
 }

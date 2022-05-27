@@ -36,7 +36,6 @@ int executeProcFileCommand(char *argv[], Pedido pe, int ppid){
     //Este pid é o pid do processo associado ao pedido
     pid = fork();
     if(pid == 0){
-        close(pe->pipe[0]);
         //Só precisamos de pipes se houverem 2 ou mais transformações
         if(nrpipes >= 1){
 
@@ -149,12 +148,20 @@ int executeProcFileCommand(char *argv[], Pedido pe, int ppid){
         //Quando este terminar o pedido foi concluído
         waitpid(pid, NULL, 1);
         pid = getpid();
+
+        int f = open("clients-to-server", O_WRONLY);
+        if(f == -1){
+            printf("%s\n", strerror(errno));
+        }
         kill(ppid, SIGUSR2);
-        //write(pe->pipe[1], &pid, sizeof(int));
-        close(pe->pipe[1]);
-        exit(0);
+
+        printf("Vai escrever\n");
+        write(f, &pid, sizeof(int));
+        printf("Escreveu\n");
+        close(f);
+
+        _exit(0);
     }
-    close(pe->pipe[1]);
 
     //Devolve o pid do processo associado ao pedido
     return pid;
