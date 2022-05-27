@@ -29,7 +29,7 @@ void colocaEmExecucao(Pedido pe, PedidosEmExecucao *pexec, int *transConfig, cha
     write(pe->fifo_ouput,"Pedido a ser processado\n", 25 * sizeof(char));
 
     //Coloca o comando a executar
-    pe->pid = executeProcFileCommand(argv,pe->pedido,pe->tampedido,getpid());
+    pe->pid = executeProcFileCommand(argv,pe,getpid());
 
     PedidosEmExecucao novo = malloc(sizeof(struct pedidosEmExecucao));
     novo->atual = pe;
@@ -56,7 +56,7 @@ void retiraPedidoConcluido(int pid, PedidosEmExecucao *pexec, int *transConfig){
         close((*pexec)->atual->fifo_ouput);
         //Envia o número de bytes input para o cliente (Funcionalidade avançada)
         if(fork()==0){
-            dup2((*pexec)->atual->fifo_ouput,1);
+            dup2((*pexec)->atual->fifo_ouput, 1);
             execlp("wc","wc","-c",(*pexec)->atual->pedido[1],NULL);
             exit(1);
         }

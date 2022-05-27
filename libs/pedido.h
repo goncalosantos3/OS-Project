@@ -8,10 +8,11 @@ typedef struct pedido{
     int tampedido;
     int pid;
     int transNecess[7];
+    int *pipe;
     char *pedido[];
 }*Pedido;
 
-void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, char *fifo_name, int f1);
+void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, char *fifo_name, int f1, int *pipe);
 void freePedido(Pedido pe);
 void printPedido(Pedido pe);
 

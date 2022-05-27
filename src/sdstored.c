@@ -102,28 +102,31 @@ int main(int argc, char *argv[]){
     PedidosEmEspera esp = initEmEspera();
     PedidosEmExecucao pexec = initEmExecucao();
 
-    int pipefd[2];
-    pipe(pipefd);
-    recebeNovosPedidos(f1,pipefd,command,getpid());
+    //Este pipe serve para comunicar entre o processo que recebe novos pedidos
+    // e o processo principal do programa
+    int pipe1[2];
+    pipe(pipe1);
+    recebeNovosPedidos(f1,pipe1,command,getpid());
 
     while((acabouExecucao == 0) || 
     (acabouExecucao == 1 && (isEmptyEmEspera(esp) == 0 || isEmptyEmExecucao(pexec) == 0))){
         pause();        
         printf("Recebi um sinal!!!\n");
+        int pipe2[2];
+
         if(sinal == 0){
             printf("Novo pedido\n");
             //Recebemos um novo pedido;
-            read(pipefd[0], &n, sizeof(int));
-            read(pipefd[0], command, n * sizeof(char));
-            printf("%s\n", command);
-            read(pipefd[0], &tampedido, sizeof(int));
-            printf("%d\n", tampedido);
-            read(pipefd[0], &n, sizeof(int));
-            read(pipefd[0], fifo_name, n * sizeof(char));
-            printf("%s\n", fifo_name);
+            pipe(pipe2);
 
-            Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
-            buildPedido(command, pe, tampedido, nrpedido, fifo_name, f1);
+            read(pipe1[0], &n, sizeof(int));
+            read(pipe1[0], command, n * sizeof(char));
+            read(pipe1[0], &tampedido, sizeof(int));
+            read(pipe1[0], &n, sizeof(int));
+            read(pipe1[0], fifo_name, n * sizeof(char));
+
+            Pedido pe = malloc(sizeof(struct pedido) + 2 * sizeof(int) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
+            buildPedido(command, pe, tampedido, nrpedido, fifo_name, f1, pipe2);
             printPedido(pe);
             if(strcmp(pe->pedido[0], "proc-file") == 0){
                 //Comando em fila de espera
@@ -144,12 +147,15 @@ int main(int argc, char *argv[]){
             }
         }else if(sinal == 1){
             printf("Um pedido terminou a sua execução\n");
-            //Um pedido terminou a sua execução
             pid = wait(NULL);
+            //read(pipe2[0], &pid, sizeof(int));
+            //close(pipe2[0]);
+            printf("%d\n", pid);
             retiraPedidoConcluido(pid,&pexec, transConfig);
             retiraPedidosParaExecucao(&esp, &pexec, transConfig, argv);
         }
     }
+    close(pipe1[0]);
     return 0;
 }
 

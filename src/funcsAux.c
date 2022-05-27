@@ -28,13 +28,15 @@
 *   - E finalmente todas as transformações a serem executadas para completar o pedido
 *   Recebe ainda o parametro nrargs que se trata do comprimento do array de strings transformacoes.
 */
-int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int ppid){
+int executeProcFileCommand(char *argv[], Pedido pe, int ppid){
     char *path; 
-    int nrpipes = nrargs-4;
+    int nrpipes = pe->tampedido-4;
     int pid;
 
     //Este pid é o pid do processo associado ao pedido
-    if((pid = fork()) == 0){
+    pid = fork();
+    if(pid == 0){
+        close(pe->pipe[0]);
         //Só precisamos de pipes se houverem 2 ou mais transformações
         if(nrpipes >= 1){
 
@@ -49,9 +51,9 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int
                 //Primeiro comando
                 if(i == 0 && fork() == 0){
                     path = strcat(argv[2],"/");
-                    path = strcat(path,transformacoes[i+3]);
+                    path = strcat(path,pe->pedido[i+3]);
                     //printf("%s\n", path);
-                    int f = open(transformacoes[1],O_RDONLY);
+                    int f = open(pe->pedido[1],O_RDONLY);
                     if(f == -1){
                         printf("%s\n", strerror(errno));
                     }
@@ -65,7 +67,7 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int
                         close(pipes[i][1]);
                     }
 
-                    if(execl(path, transformacoes[i+3], NULL) == -1){
+                    if(execl(path, pe->pedido[i+3], NULL) == -1){
                         printf("%s\n", strerror(errno));
                         exit(1);
                     }
@@ -73,7 +75,7 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int
                 //Comandos intermédios
                 if(i > 0 && i < nrpipes && fork() == 0){
                     path = strcat(argv[2], "/");
-                    path = strcat(path, transformacoes[i+3]);
+                    path = strcat(path, pe->pedido[i+3]);
                     //printf("%s\n", path);
                     dup2(pipes[i-1][0],0);
                     dup2(pipes[i][1],1);
@@ -84,7 +86,7 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int
                         close(pipes[i][1]);
                     }
 
-                    if(execl(path,transformacoes[i+3], NULL) == -1){
+                    if(execl(path,pe->pedido[i+3], NULL) == -1){
                         printf("%s\n", strerror(errno));
                         exit(1);
                     }
@@ -92,9 +94,9 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int
                 //Último comando
                 else if(i == nrpipes && ((pid = fork()) == 0)){
                     path = strcat(argv[2],"/");
-                    path = strcat(path,transformacoes[i+3]);
+                    path = strcat(path,pe->pedido[i+3]);
 
-                    int f = open(transformacoes[2],O_CREAT | O_WRONLY | O_TRUNC, 0660);
+                    int f = open(pe->pedido[2],O_CREAT | O_WRONLY | O_TRUNC, 0660);
                     if(f == -1){
                         printf("%s\n", strerror(errno));
                     }
@@ -108,7 +110,7 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int
                         close(pipes[i][1]);
                     }
 
-                    if(execl(path, transformacoes[i+3], NULL) == -1){
+                    if(execl(path, pe->pedido[i+3], NULL) == -1){
                         printf("%s\n", strerror(errno));
                         exit(1);
                     }
@@ -124,20 +126,20 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int
         else if(nrpipes == 0){
             if((pid = fork()) == 0){
                 path = strcat(argv[2],"/");
-                path = strcat(path,transformacoes[3]);
+                path = strcat(path,pe->pedido[3]);
 
-                int f1 = open(transformacoes[1],O_RDONLY);
+                int f1 = open(pe->pedido[1],O_RDONLY);
                 if(f1 == -1){
                     printf("%s\n", strerror(errno));
                 }
-                int f2 = open(transformacoes[2],O_CREAT | O_WRONLY | O_TRUNC, 0660);
+                int f2 = open(pe->pedido[2],O_CREAT | O_WRONLY | O_TRUNC, 0660);
                 if(f2 == -1){
                     printf("%s\n", strerror(errno));
                 }
                 dup2(f1,0);
                 dup2(f2,1);
                 close(f1); close(f2);
-                if(execl(path,transformacoes[3],NULL) == -1){
+                if(execl(path,pe->pedido[3],NULL) == -1){
                     printf("%s\n", strerror(errno));
                     exit(1);
                 }
@@ -146,9 +148,14 @@ int executeProcFileCommand(char *argv[], char *transformacoes[], int nrargs, int
         //O processo associado ao pedido espera pelo processo associado à última transformação
         //Quando este terminar o pedido foi concluído
         waitpid(pid, NULL, 1);
+        pid = getpid();
         kill(ppid, SIGUSR2);
+        //write(pe->pipe[1], &pid, sizeof(int));
+        close(pe->pipe[1]);
         exit(0);
     }
+    close(pe->pipe[1]);
+
     //Devolve o pid do processo associado ao pedido
     return pid;
 }
