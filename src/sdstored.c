@@ -35,33 +35,43 @@ void paraExecucao(int signal){
 }
 
 void recebeNovosPedidos(int f, int *pipefd, int pid){
-    int tampedido, n1, n2;
+    int tampedido, n1, n2, nrpedido;
     char fifo_name[30], command[300];
 
     if(fork() == 0){ 
         printf("Processo que recebe pedidos-> %d\n", getpid());   
         close(pipefd[0]);
         while(1){
-            //Este processo só vai escrever o input que recebe do cliente para o processo principal
-            read(f, &n1, sizeof(int));
-            read(f, command, n1 * sizeof(char));
-            printf("%s\n", command);
-            read(f, &tampedido, sizeof(int));
-            read(f, &n2, sizeof(int));
-            read(f, fifo_name, n2 * sizeof(char));
-            printf("%s\n", fifo_name);
-            //Lê os inputs do cliente
+            if(acabouExecucao == 0){
+                //Este processo só vai escrever o input que recebe do cliente para o processo principal
+                read(f, &n1, sizeof(int));
+                read(f, command, n1 * sizeof(char));
+                read(f, &tampedido, sizeof(int));
+                read(f, &n2, sizeof(int));
+                read(f, fifo_name, n2 * sizeof(char));
+                //Lê os inputs do cliente
 
-            printf("Vou mandar o sinal SIGUSR1\n");
-            kill(pid, SIGUSR1);
-            //Acorda o processo principal
+                printf("Vou mandar o sinal SIGUSR1\n");
+                kill(pid, SIGUSR1);
+                //Acorda o processo principal
 
-            write(pipefd[1], &n1, sizeof(int));
-            write(pipefd[1], command, strlen(command) + 1);
-            write(pipefd[1], &tampedido, sizeof(int));
-            write(pipefd[1], &n2, sizeof(int));
-            write(pipefd[1], fifo_name, strlen(fifo_name) + 1);
-            //Manda toda a informação necessária ao processo principal
+                write(pipefd[1], &n1, sizeof(int));
+                write(pipefd[1], command, strlen(command) + 1);
+                write(pipefd[1], &tampedido, sizeof(int));
+                write(pipefd[1], &n2, sizeof(int));
+                write(pipefd[1], fifo_name, strlen(fifo_name) + 1);
+                //Manda toda a informação necessária ao processo principal
+            }else{
+                read(f, &n1, sizeof(int));
+                read(f, command, n1 * sizeof(char));
+                read(f, &tampedido, sizeof(int));
+                read(f, &n2, sizeof(int));
+                read(f, fifo_name, n2 * sizeof(char));
+                int f = open(fifo_name, O_WRONLY);
+                write(f, "Pedido rejeitado\n", 17 *  sizeof(char));
+                close(f);
+            }
+            nrpedido++;
         }
         exit(0);
     }
@@ -73,6 +83,8 @@ int main(int argc, char *argv[]){
     int p, tampedido, fifo_in, fifo_out, nrpedido=0, pid,n;
     char fifo_name[30];
     char command[300];
+
+    printf("Processo principal do server-> %d", getpid());
 
     //As próximas 4 linhas de código servem para implementar o termino gracioso do programa.
     //Especificam o que o programa deve fazer ao receber o sinal SIGTERM. 
@@ -125,8 +137,8 @@ int main(int argc, char *argv[]){
         int pipe2[2];
 
         if(sinal == 0){
-            printf("Novo pedido\n");
             //Recebemos um novo pedido;
+            printf("Novo pedido\n");
             pipe(pipe2);
 
             read(pipe1[0], &n, sizeof(int));
@@ -134,9 +146,10 @@ int main(int argc, char *argv[]){
             read(pipe1[0], &tampedido, sizeof(int));
             read(pipe1[0], &n, sizeof(int));
             read(pipe1[0], fifo_name, n * sizeof(char));
-
             Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
             buildPedido(command, pe, tampedido, nrpedido, fifo_name);
+            printPedido(pe);
+
             if(strcmp(pe->pedido[0], "proc-file") == 0){
                 //Comando em fila de espera
                 if(verificaPedido(transConfig,pe->transNecess) == 0){
