@@ -40,7 +40,6 @@ void recebeNovosPedidos(int f, int *pipefd, int pid){
     char fifo_name[30], command[300];
 
     if(fork() == 0){ 
-        printf("Processo que recebe pedidos-> %d\n", getpid());   
         close(pipefd[0]);
         while(1){
             //Este processo só vai escrever o input que recebe do cliente para o processo principal
@@ -174,7 +173,6 @@ int main(int argc, char *argv[]){
             retiraPedidosParaExecucao(&esp, &pexec, transConfig, argv);
         }
     }
-    printf("Saiu do ciclo\n");
     close(pipe1[0]);
     close(fifo_in);
     close(fifo_out);

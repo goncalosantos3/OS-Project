@@ -68,7 +68,6 @@ void enviaInfoServerStatus(char *fifo_name, int f1, char *argv[]){
     n = strlen(fifo_name) + 1;
     write(f1, &n, sizeof(int));
     write(f1, fifo_name, strlen(fifo_name) + 1);
-    printf("Nome do FIFO-> %s\n", fifo_name);
     close(f1);
 }
 
@@ -84,7 +83,6 @@ int recebeInfoServer(char info[], char *fifo_name){
     while((n = read(f2,info, 100 * sizeof(char)))>0){
         write(1, info, n * sizeof(char));
     }
-    printf("Acabei de ler\n");
     return f2;
 }
 
