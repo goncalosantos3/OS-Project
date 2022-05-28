@@ -47,10 +47,8 @@ void buildPedido(char *command, Pedido pe, int tampedido, int nrpedido, char *fi
         }
     }
     //Recebe o cliente o nome do fifo para enviar itampedido
-    printf("FIFO name-> %s", fifo_name);
     pe->fifo_ouput = open(fifo_name, O_WRONLY);
     if(pe->fifo_ouput == -1){
-        printf("FIFO deu merda\n");
         printf("%s\n", strerror(errno));
     }
     pe->nrPedido = nrpedido;

@@ -43,7 +43,6 @@ void enviaInfoServer(int tampedido, int argc, char *argv[], char *fifo_name ,int
             strcat(command," ");
         }
     }
-    printf("%s\n", command);
     command[strlen(command)] = '\0';
     n = strlen(command) + 1;
     write(f1, &n, sizeof(int));
@@ -51,12 +50,11 @@ void enviaInfoServer(int tampedido, int argc, char *argv[], char *fifo_name ,int
 
     write(f1, &tampedido, sizeof(int));
     //Manda para o servidor o número de argumentos no comando input
-    printf("%s\n", fifo_name);
-    //Manda para o servidor o nome do fifo pelo qual o servidor deve responder ao cliente
     fifo_name[strlen(fifo_name)] = '\0';
     n = strlen(fifo_name) + 1;
     write(f1, &n, sizeof(int));
     write(f1, fifo_name,  strlen(fifo_name) + 1);
+    //Manda para o servidor o nome do fifo pelo qual o servidor deve responder ao cliente
     close(f1);
 }
 
@@ -137,7 +135,6 @@ int main(int argc, char *argv[]){
             //As strings "-p" e o valor da prioridade não entram no array de strings
             tampedido -= 2;
         }
-        printf("Foda-se\n");
         enviaInfoServer(tampedido, argc, argv, fifo_name, f1);
 
         char info[100];

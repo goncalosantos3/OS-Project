@@ -124,7 +124,6 @@ int executeProcFileCommand(char *argv[], Pedido pe, int ppid){
         }
         else if(nrpipes == 0){
             if((pid = fork()) == 0){
-                printf("Pid de um processo neto-> %d\n", getpid());
                 path = strcat(argv[2],"/");
                 path = strcat(path,pe->pedido[3]);
 
@@ -148,27 +147,26 @@ int executeProcFileCommand(char *argv[], Pedido pe, int ppid){
         }
         //O processo associado ao pedido espera pelo processo associado à última transformação
         //Quando este terminar o pedido foi concluído
-        waitpid(pid, NULL, 1);
-        printf("Pedido do processo filho-> %d\n", getpid());
+        waitpid(pid, NULL, 0);
         write(pe->fifo_ouput,"Pedido concluído\n", 18 * sizeof(char));
 
         int f1 = open(pe->pedido[1], O_RDONLY);
         if(f1 == -1){
-            printf("Merda\n");
+            printf("Erro ao abrir ficheiro\n");
         }
         int f2 = open(pe->pedido[2], O_RDONLY);
         if(f2 == -1){
-            perror("abc");
+            perror("Erro ao abrir ficheiro output\n");
         }
         int bytes_in = lseek(f1,0,SEEK_END);
         int bytes_out = lseek(f2,0,SEEK_END);
         char str[50];
         sprintf(str, "(Bytes Input: %d, Bytes Output: %d)\n", bytes_in, bytes_out);
         write(pe->fifo_ouput, str, strlen(str) * sizeof(char));
-
+        close(pe->fifo_ouput);
         _exit(0);
     }
-
+    close(pe->fifo_ouput);
     //Devolve o pid do processo associado ao pedido
     return pid;
 }
