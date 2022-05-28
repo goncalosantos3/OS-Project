@@ -57,18 +57,21 @@ void enviaInfoServer(int tampedido, int argc, char *argv[], char *fifo_name ,int
     n = strlen(fifo_name) + 1;
     write(f1, &n, sizeof(int));
     write(f1, fifo_name,  strlen(fifo_name) + 1);
+    close(f1);
 }
 
 void enviaInfoServerStatus(char *fifo_name, int f1, char *argv[]){
     int tampedido=1, n;
 
-    n = strlen(argv[1]);
+    n = strlen(argv[1]) + 1;
     write(f1, &n, sizeof(int));
-    write(f1,argv[1], strlen(argv[1]) + 1);
-    write(f1,&tampedido,sizeof(int));
-    n = strlen(fifo_name);
+    write(f1, argv[1], strlen(argv[1]) + 1);
+    write(f1, &tampedido, sizeof(int));
+    n = strlen(fifo_name) + 1;
     write(f1, &n, sizeof(int));
-    write(f1,fifo_name, strlen(fifo_name) + 1);
+    write(f1, fifo_name, strlen(fifo_name) + 1);
+    printf("Nome do FIFO-> %s\n", fifo_name);
+    close(f1);
 }
 
 int recebeInfoServer(char info[], char *fifo_name){
@@ -95,7 +98,7 @@ int recebeInfoServerStatus(char *info, char *fifo_name){
         return 4;
     }
 
-    while((n = read(f2,&tam,sizeof(int)))>0){
+    while((n = read(f2, &tam, sizeof(int))) > 0){
         n = read(f2, info, tam * sizeof(char));
         write(1,info, tam * sizeof(char));
     }
@@ -134,18 +137,18 @@ int main(int argc, char *argv[]){
             //As strings "-p" e o valor da prioridade não entram no array de strings
             tampedido -= 2;
         }
+        printf("Foda-se\n");
         enviaInfoServer(tampedido, argc, argv, fifo_name, f1);
 
         char info[100];
         f2 = recebeInfoServer(info,fifo_name);
         
     }else if(strcmp(argv[1],"status")==0){//./sdstore status
-        enviaInfoServerStatus(fifo_name,f1, argv);
+        enviaInfoServerStatus(fifo_name, f1, argv);
 
         char info[300];
         f2 = recebeInfoServerStatus(info,fifo_name);
     }
-    close(f1);
     close(f2);
     return 0;
 }

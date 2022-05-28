@@ -34,19 +34,22 @@ void paraExecucao(int signal){
     acabouExecucao = 1;
 }
 
-void recebeNovosPedidos(int f, int *pipefd, char *command, int pid){
+void recebeNovosPedidos(int f, int *pipefd, int pid){
     int tampedido, n1, n2;
-    char fifo_name[30];
+    char fifo_name[30], command[300];
 
-    if(fork() == 0){    
+    if(fork() == 0){ 
+        printf("Processo que recebe pedidos-> %d\n", getpid());   
         close(pipefd[0]);
         while(1){
             //Este processo só vai escrever o input que recebe do cliente para o processo principal
             read(f, &n1, sizeof(int));
             read(f, command, n1 * sizeof(char));
+            printf("%s\n", command);
             read(f, &tampedido, sizeof(int));
             read(f, &n2, sizeof(int));
             read(f, fifo_name, n2 * sizeof(char));
+            printf("%s\n", fifo_name);
             //Lê os inputs do cliente
 
             printf("Vou mandar o sinal SIGUSR1\n");
@@ -75,7 +78,7 @@ int main(int argc, char *argv[]){
     //Especificam o que o programa deve fazer ao receber o sinal SIGTERM. 
     signal(SIGTERM, &paraExecucao);
     signal(SIGUSR1, &novoPedido);
-    signal(SIGUSR2, &pedidoConcluido);
+    signal(SIGCHLD, &pedidoConcluido);
     
     p  = mkfifo("clients-to-server",0777);
     if(p == -1){
@@ -112,10 +115,11 @@ int main(int argc, char *argv[]){
     // e o processo principal do programa
     int pipe1[2];
     pipe(pipe1);
-    recebeNovosPedidos(fifo_in,pipe1,command,getpid());
+    recebeNovosPedidos(fifo_in,pipe1,getpid());
 
     while((acabouExecucao == 0) || 
     (acabouExecucao == 1 && (isEmptyEmEspera(esp) == 0 || isEmptyEmExecucao(pexec) == 0))){
+        printf("Pause\n");
         pause();        
         printf("Recebi um sinal!!!\n");
         int pipe2[2];
@@ -152,8 +156,7 @@ int main(int argc, char *argv[]){
             }
         }else if(sinal == 1){
             printf("Um pedido terminou a sua execução\n");
-            read(fifo_in, &pid, sizeof(int));
-            printf("Pid a remover-> %d\n", pid);
+            pid = wait(NULL);
             retiraPedidoConcluido(pid, &pexec, transConfig);
             retiraPedidosParaExecucao(&esp, &pexec, transConfig, argv);
         }

@@ -124,6 +124,7 @@ int executeProcFileCommand(char *argv[], Pedido pe, int ppid){
         }
         else if(nrpipes == 0){
             if((pid = fork()) == 0){
+                printf("Pid de um processo neto-> %d\n", getpid());
                 path = strcat(argv[2],"/");
                 path = strcat(path,pe->pedido[3]);
 
@@ -135,6 +136,7 @@ int executeProcFileCommand(char *argv[], Pedido pe, int ppid){
                 if(f2 == -1){
                     printf("%s\n", strerror(errno));
                 }
+
                 dup2(f1,0);
                 dup2(f2,1);
                 close(f1); close(f2);
@@ -147,18 +149,22 @@ int executeProcFileCommand(char *argv[], Pedido pe, int ppid){
         //O processo associado ao pedido espera pelo processo associado à última transformação
         //Quando este terminar o pedido foi concluído
         waitpid(pid, NULL, 1);
-        pid = getpid();
+        printf("Pedido do processo filho-> %d\n", getpid());
+        write(pe->fifo_ouput,"Pedido concluído\n", 18 * sizeof(char));
 
-        int f = open("clients-to-server", O_WRONLY);
-        if(f == -1){
-            printf("%s\n", strerror(errno));
+        int f1 = open(pe->pedido[1], O_RDONLY);
+        if(f1 == -1){
+            printf("Merda\n");
         }
-        kill(ppid, SIGUSR2);
-
-        printf("Vai escrever\n");
-        write(f, &pid, sizeof(int));
-        printf("Escreveu\n");
-        close(f);
+        int f2 = open(pe->pedido[2], O_RDONLY);
+        if(f2 == -1){
+            perror("abc");
+        }
+        int bytes_in = lseek(f1,0,SEEK_END);
+        int bytes_out = lseek(f2,0,SEEK_END);
+        char str[50];
+        sprintf(str, "(Bytes Input: %d, Bytes Output: %d)\n", bytes_in, bytes_out);
+        write(pe->fifo_ouput, str, strlen(str) * sizeof(char));
 
         _exit(0);
     }
@@ -284,6 +290,7 @@ void statusServer(Pedido pe, PedidosEmExecucao pexec, int *maxTrans, int *transC
         write(pe->fifo_ouput, &tam, sizeof(int));
         write(pe->fifo_ouput, string, strlen(string)+1);
     }
+    
     close(pe->fifo_ouput);
     free(pe);
 }
