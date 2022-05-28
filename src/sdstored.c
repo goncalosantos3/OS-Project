@@ -110,7 +110,7 @@ int main(int argc, char *argv[]){
     PedidosEmEspera esp = initEmEspera();
     PedidosEmExecucao pexec = initEmExecucao();
 
-    printf("Processo principal do server-> %d", getpid());
+    printf("Processo principal do server-> %d\n", getpid());
 
     //Este pipe serve para comunicar entre o processo que recebe novos pedidos
     // e o processo principal do programa
