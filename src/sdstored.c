@@ -134,12 +134,10 @@ int main(int argc, char *argv[]){
         printf("Pause\n");
         pause();        
         printf("Recebi um sinal!!!\n");
-        int pipe2[2];
 
         if(sinal == 0){
             //Recebemos um novo pedido;
             printf("Novo pedido\n");
-            pipe(pipe2);
 
             read(pipe1[0], &n, sizeof(int));
             read(pipe1[0], command, n * sizeof(char));
@@ -148,7 +146,6 @@ int main(int argc, char *argv[]){
             read(pipe1[0], fifo_name, n * sizeof(char));
             Pedido pe = malloc(sizeof(struct pedido) + 7 * sizeof(int) + tampedido * sizeof(*pe->pedido)); 
             buildPedido(command, pe, tampedido, nrpedido, fifo_name);
-            printPedido(pe);
 
             if(strcmp(pe->pedido[0], "proc-file") == 0){
                 //Comando em fila de espera
