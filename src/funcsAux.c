@@ -95,7 +95,7 @@ int executeProcFileCommand(char *argv[], Pedido pe, int ppid){
                     path = strcat(argv[2],"/");
                     path = strcat(path,pe->pedido[i+3]);
 
-                    int f = open(pe->pedido[2],O_CREAT | O_WRONLY | O_TRUNC, 0660);
+                    int f = open(pe->pedido[2], O_CREAT | O_WRONLY | O_TRUNC, 0660);
                     if(f == -1){
                         printf("%s\n", strerror(errno));
                     }
@@ -131,7 +131,7 @@ int executeProcFileCommand(char *argv[], Pedido pe, int ppid){
                 if(f1 == -1){
                     printf("%s\n", strerror(errno));
                 }
-                int f2 = open(pe->pedido[2],O_CREAT | O_WRONLY | O_TRUNC, 0660);
+                int f2 = open(pe->pedido[2], O_CREAT | O_WRONLY | O_TRUNC, 0660);
                 if(f2 == -1){
                     printf("%s\n", strerror(errno));
                 }

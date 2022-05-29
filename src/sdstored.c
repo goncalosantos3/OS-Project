@@ -39,9 +39,10 @@ void recebeNovosPedidos(int f, int *pipefd, int pid){
     int tampedido, n1, n2, nrpedido;
     char fifo_name[30], command[300];
 
+
     if(fork() == 0){ 
         close(pipefd[0]);
-        while(1){
+        while(acabouExecucao == 0){
             //Este processo só vai escrever o input que recebe do cliente para o processo principal
             read(f, &n1, sizeof(int));
             read(f, command, n1 * sizeof(char));
@@ -163,7 +164,13 @@ int main(int argc, char *argv[]){
 
             Pedido pe = malloc(sizeof(struct pedido) + tampedido * sizeof(*pe->pedido)); 
             buildPedido(command, pe, tampedido, nrpedido, fifo_name);
-            write(pe->fifo_ouput, "Pedido rejeitado\n", 18*sizeof(char));
+            if(strcmp(pe->pedido[0],"status") == 0){
+                n = 18;
+                write(pe->fifo_ouput, &n, sizeof(int));
+                write(pe->fifo_ouput, "Pedido rejeitado\n", 18 * sizeof(char));
+            }else{
+                write(pe->fifo_ouput, "Pedido rejeitado\n", 18 * sizeof(char));
+            }
             close(pe->fifo_ouput);
             free(pe);
         }else if(sinal == 1){
