@@ -2,4 +2,6 @@
 
 ## Team Members:
 
-1
+1. Gonçalo Santos
+2. Gonçalo Braga
+3. João Alvim
